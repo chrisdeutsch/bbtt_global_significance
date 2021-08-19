@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import argparse
 import csv
+import os
 import sys
 import time
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
@@ -22,10 +22,14 @@ args = parser.parse_args()
 
 start_time = time.time()
 
+# Get macro directory to load needed ROOT macros
+macro_path = os.path.join(os.path.dirname(__file__), "..", "macros")
+macro_path = os.path.abspath(macro_path)
+
 
 import ROOT as R
 R.gROOT.SetBatch(True)
-R.gROOT.ProcessLine(".L StandardHypoTestChris.C++")
+R.gROOT.ProcessLine(".L {}/DiscoveryTestStatToys.C++".format(macro_path))
 
 
 # Retrieves value of a RooRealVar from RooArgSet
@@ -48,7 +52,7 @@ if args.verbose:
     # Doesn't really do anything...
     R.Math.MinimizerOptions.SetDefaultPrintLevel(3)
 
-htr = R.StandardHypoTestChris(
+htr = R.DiscoveryTestStatToys(
     args.infile,
     args.workspace_name,
     args.model_config,

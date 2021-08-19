@@ -14,7 +14,7 @@
 using namespace RooFit;
 using namespace RooStats;
 
-HypoTestResult *StandardHypoTestChris(
+HypoTestResult *DiscoveryTestStatToys(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
     int ntoys = 100, bool verbose = false) {
@@ -33,7 +33,7 @@ HypoTestResult *StandardHypoTestChris(
   // Try to open the file
   TFile *file = TFile::Open(filename);
   if (!file) {
-    Error("StandardHypoTestChris", "Input file %s is not found", filename);
+    Error("DiscoveryTestStatToys", "Input file %s is not found", filename);
     return nullptr;
   }
 
@@ -44,7 +44,7 @@ HypoTestResult *StandardHypoTestChris(
   // get the workspace out of the file
   RooWorkspace *w = (RooWorkspace *)file->Get(workspaceName);
   if (!w) {
-    Error("StandardHypoTestChris", "Workspace %s not found", workspaceName);
+    Error("DiscoveryTestStatToys", "Workspace %s not found", workspaceName);
     return nullptr;
   }
 
@@ -55,7 +55,7 @@ HypoTestResult *StandardHypoTestChris(
   while ((arg = iter.next())) {
     if (arg->IsA() == RooRealSumPdf::Class()) {
       arg->setAttribute("BinnedLikelihood");
-      Info("StandardHypoTestChris", "Activating binned likelihood attribute for %s", arg->GetName());
+      Info("DiscoveryTestStatToys", "Activating binned likelihood attribute for %s", arg->GetName());
     }
   }
 
@@ -64,7 +64,7 @@ HypoTestResult *StandardHypoTestChris(
 
   // make sure ingredients are found
   if (!data || !sbModel) {
-    Error("StandardHypoTestChris", "data or ModelConfig was not found");
+    Error("DiscoveryTestStatToys", "data or ModelConfig was not found");
     return nullptr;
   }
 
@@ -76,7 +76,7 @@ HypoTestResult *StandardHypoTestChris(
 
     const auto paramReal = dynamic_cast<RooRealVar *>(param);
     if (!paramReal) {
-      Error("StandardHypoTestChris", "Cannot cast NP to RooRealVar");
+      Error("DiscoveryTestStatToys", "Cannot cast NP to RooRealVar");
       return nullptr;
     }
 
@@ -89,8 +89,8 @@ HypoTestResult *StandardHypoTestChris(
   // make b model
   ModelConfig *bModel = nullptr;
   if (!bModel) {
-    Info("StandardHypoTestChris", "The background model does not exist");
-    Info("StandardHypoTestChris",
+    Info("DiscoveryTestStatToys", "The background model does not exist");
+    Info("DiscoveryTestStatToys",
          "Copy it from ModelConfig %s and set POI to zero", modelSBName);
     bModel = (ModelConfig *)sbModel->Clone();
     bModel->SetName(TString(modelSBName) + TString("B_only"));
@@ -105,7 +105,7 @@ HypoTestResult *StandardHypoTestChris(
   }
 
   if (!sbModel->GetSnapshot() || poiValue > 0) {
-    Info("StandardHypoTestChris",
+    Info("DiscoveryTestStatToys",
          "Model %s has no snapshot  - make one using model poi", modelSBName);
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
@@ -131,7 +131,7 @@ HypoTestResult *StandardHypoTestChris(
   std::unique_ptr<ToyMCSampler> sampler;
   sampler.reset(dynamic_cast<ToyMCSampler *>(hypoCalc->GetTestStatSampler()));
   if (!sampler) {
-    Error("StandardHypoTestChris", "Cannot retrieve test statistic sampler");
+    Error("DiscoveryTestStatToys", "Cannot retrieve test statistic sampler");
     return nullptr;
   }
   sampler->SetGenerateBinned(true);

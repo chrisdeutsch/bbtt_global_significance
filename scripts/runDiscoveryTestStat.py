@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import argparse
 import csv
-import sys
 import os
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
