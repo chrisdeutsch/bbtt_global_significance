@@ -2,6 +2,7 @@
 import argparse
 import csv
 import sys
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
@@ -15,14 +16,19 @@ parser.add_argument("-i", "--index", type=int, default=None)
 
 args = parser.parse_args()
 
+# Get macro directory to load needed ROOT macros
+macro_path = os.path.join(os.path.dirname(__file__), "..", "macros")
+macro_path = os.path.abspath(macro_path)
+
+
 import ROOT as R
 R.gROOT.SetBatch(True)
-R.gROOT.ProcessLine(".L StandardHypoTestData.C++")
+R.gROOT.ProcessLine(".L {}/DiscoveryTestStat.C++".format(macro_path))
 
 R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
-R.Math.MinimizerOptions.SetDefaultStrategy(1)
+R.Math.MinimizerOptions.SetDefaultStrategy(2)
 
-ret = R.StandardHypoTestData(
+ret = R.DiscoveryTestStat(
     args.infile,
     args.workspace_name,
     args.model_config,

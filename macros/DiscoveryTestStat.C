@@ -13,7 +13,7 @@ using namespace RooFit;
 using namespace RooStats;
 
 
-struct HypotestResult {
+struct DiscoveryTestStatResult {
   double ts = 0.0;
   double muhat = 0.0;
   double uncond_status = 0.0;
@@ -22,7 +22,7 @@ struct HypotestResult {
   double cond_minNLL = 0.0;
 };
 
-HypotestResult StandardHypoTestData(
+DiscoveryTestStatResult DiscoveryTestStat(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
     bool verbose = false) {
@@ -35,23 +35,23 @@ HypotestResult StandardHypoTestData(
   const int printLevel = verbose ? 2 : 1;
 
   // Create result object
-  HypotestResult result;
+  DiscoveryTestStatResult result;
 
   // Try to open the file
   TFile *file = TFile::Open(filename);
   if (!file) {
-    Error("StandardHypoTestData", "Input file %s is not found", filename);
+    Error("DiscoveryTestStat", "Input file %s is not found", filename);
     return result;
   }
 
-  // Global settings to Roostats
+  // Global settings for Roostats
   RooStats::UseNLLOffset(true);
   ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 
   // get the workspace out of the file
   RooWorkspace *w = (RooWorkspace *)file->Get(workspaceName);
   if (!w) {
-    Error("StandardHypoTestData", "Workspace %s not found", workspaceName);
+    Error("DiscoveryTestStat", "Workspace %s not found", workspaceName);
     return result;
   }
 
@@ -62,7 +62,7 @@ HypotestResult StandardHypoTestData(
   while ((arg = iter.next())) {
     if (arg->IsA() == RooRealSumPdf::Class()) {
       arg->setAttribute("BinnedLikelihood");
-      Info("StandardHypoTestData", "Activating binned likelihood attribute for %s", arg->GetName());
+      Info("DiscoveryTestStat", "Activating binned likelihood attribute for %s", arg->GetName());
     }
   }
 
@@ -71,7 +71,7 @@ HypotestResult StandardHypoTestData(
 
   // make sure ingredients are found
   if (!data || !sbModel) {
-    Error("StandardHypoTestData", "data or ModelConfig was not found");
+    Error("DiscoveryTestStat", "data or ModelConfig was not found");
     return result;
   }
 
@@ -83,7 +83,7 @@ HypotestResult StandardHypoTestData(
 
     const auto paramReal = dynamic_cast<RooRealVar *>(param);
     if (!paramReal) {
-      Error("StandardHypoTestData", "Cannot cast NP to RooRealVar");
+      Error("DiscoveryTestStat", "Cannot cast NP to RooRealVar");
       return result;
     }
 
@@ -96,8 +96,8 @@ HypotestResult StandardHypoTestData(
   // make b model
   ModelConfig *bModel = nullptr;
   if (!bModel) {
-    Info("StandardHypoTestData", "The background model does not exist");
-    Info("StandardHypoTestData",
+    Info("DiscoveryTestStat", "The background model does not exist");
+    Info("DiscoveryTestStat",
          "Copy it from ModelConfig %s and set POI to zero", modelSBName);
     bModel = (ModelConfig *)sbModel->Clone();
     bModel->SetName(TString(modelSBName) + TString("B_only"));
@@ -112,7 +112,7 @@ HypotestResult StandardHypoTestData(
   }
 
   if (!sbModel->GetSnapshot() || poiValue > 0) {
-    Info("StandardHypoTestData",
+    Info("DiscoveryTestStat",
          "Model %s has no snapshot  - make one using model poi", modelSBName);
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
@@ -135,7 +135,7 @@ HypotestResult StandardHypoTestData(
   const RooArgSet *nullSnapshot = bModel->GetSnapshot();
   RooArgSet nullP(*nullSnapshot);
   const auto ts = profll->Evaluate(*data, nullP);
-  Info("StandardHypoTestData", "Test statistic on data: %f", ts);
+  Info("DiscoveryTestStat", "Test statistic on data: %f", ts);
 
   const auto details = profll->GetDetailedOutput();
 
