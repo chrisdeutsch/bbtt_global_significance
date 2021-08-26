@@ -20,12 +20,9 @@ parser.add_argument("-v", "--verbose", action="store_true")
 
 args = parser.parse_args()
 
-start_time = time.time()
-
 # Get macro directory to load needed ROOT macros
 macro_path = os.path.join(os.path.dirname(__file__), "..", "macros")
 macro_path = os.path.abspath(macro_path)
-
 
 import ROOT as R
 R.gROOT.SetBatch(True)
@@ -52,6 +49,8 @@ if args.verbose:
     # Doesn't really do anything...
     R.Math.MinimizerOptions.SetDefaultPrintLevel(3)
 
+start_time = time.time()
+
 htr = R.DiscoveryTestStatToys(
     args.infile,
     args.workspace_name,
@@ -59,6 +58,8 @@ htr = R.DiscoveryTestStatToys(
     args.data_name,
     args.ntoys,
     args.verbose)
+
+end_time = time.time()
 
 results = []
 null_details = htr.GetNullDetailedOutput()
@@ -79,14 +80,18 @@ for i in range(null_details.numEntries()):
         "status_cond": cond_status,
     })
 
+
+total_time = end_time - start_time
+time_per_toy = total_time / args.ntoys
+
+print("Total time: {:2f} s".format(total_time))
+print("Time per toy: {:2f} s/toy".format(time_per_toy))
+
 with open(args.outfile, "w") as csvfile:
-    fieldnames = ["ts", "muhat", "status_uncond", "status_cond", "seed", "index"]
+    fieldnames = ["ts", "muhat", "status_uncond", "status_cond", "seed", "index", "avg_time"]
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for row in results:
+        row["avg_time"] = time_per_toy
         writer.writerow(row)
-
-end_time = time.time()
-print("Total time: {:2f} s".format(end_time - start_time))
-print("Time per toy: {:2f} s/toy".format((end_time - start_time) / args.ntoys))
