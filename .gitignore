@@ -2,3 +2,4 @@
 *.d
 *.so
 *.pcm
+batch_submission/logs
