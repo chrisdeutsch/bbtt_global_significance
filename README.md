@@ -22,6 +22,12 @@ tool (with different seeds) can be combined to get the q0 sampling
 distribution under the b-only hypothesis.
 
 
+`plotFitDiagnostics.py`:
+
+Creates a couple of diagnostic plots (avg. time per toy, fit failure
+rate) from a set of toys.
+
+
 ## Batch Submission
 
 The scripts in `batch_submission` are written to be run from inside of
