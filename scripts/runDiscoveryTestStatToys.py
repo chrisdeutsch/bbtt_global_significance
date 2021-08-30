@@ -14,6 +14,7 @@ parser.add_argument("-n", "--ntoys", type=int, default=10)
 parser.add_argument("--workspace-name", default="combined")
 parser.add_argument("--model-config", default="ModelConfig")
 parser.add_argument("--data-name", default="obsData")
+parser.add_argument("--mu-range", default=40., type=float)
 
 parser.add_argument("--optimizer-strategy", type=int, default=None)
 parser.add_argument("-v", "--verbose", action="store_true")
@@ -57,6 +58,7 @@ htr = R.DiscoveryTestStatToys(
     args.model_config,
     args.data_name,
     args.ntoys,
+    args.mu_range,
     args.verbose)
 
 end_time = time.time()

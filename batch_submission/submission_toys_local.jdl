@@ -15,10 +15,12 @@ Error                 = logs/err.$(ClusterId).$(Process)
 Output                = logs/out.$(ClusterId).$(Process)
 Log                   = logs/log.$(ClusterId)
 
-Arguments = $(Workspace) $(Outdir) $(NToysPerJob) $(ProcId)
+Seed = $$([ $(ProcId) + $(SeedOffset) ])
 NToysPerJob = 10
 
 Workspace = /cephfs/user/s6crdeut/Workspaces/2021_08_26_CONF/workspaces/combined/systs/$(Mass).root
 Outdir = /cephfs/user/s6crdeut/WSMakerToys_q0/combined_$(Mass)
+
+Arguments = $(Workspace) $(Outdir) $(NToysPerJob) $(Seed)
 
 Queue 100

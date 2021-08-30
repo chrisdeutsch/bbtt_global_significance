@@ -43,7 +43,7 @@ mkdir /cephfs/user/s6crdeut/WSMakerToys_q0/combined_{251,260,280,300,325,350,375
 
 To submit the q0 sampling distribution toys for the `mX = 500 GeV` workspace:
 ```bash
-condor_submit Mass=500 submission_toys_local.jdl
+condor_submit Mass=500 SeedOffset=0 submission_toys_local.jdl
 ```
 
 There is a convenient script `run_local_toys.sh` that runs all mass

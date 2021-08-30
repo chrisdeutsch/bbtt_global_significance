@@ -4,7 +4,7 @@ for mass in 251 260 280 300 325 350 375 400 \
                 1000 1100 1200 1400 1600; do
 
     echo "Submitting m=${mass}..."
-    cluster=$(condor_submit Mass="${mass}" submission_toys_local.jdl \
+    cluster=$(condor_submit Mass="${mass}" SeedOffset=0 submission_toys_local.jdl \
                   | tail -n 1 \
                   | sed "s/^.*cluster //; s/.$//")
     echo "Submitted to cluster '${cluster}'"

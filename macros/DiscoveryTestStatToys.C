@@ -17,7 +17,7 @@ using namespace RooStats;
 HypoTestResult *DiscoveryTestStatToys(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
-    int ntoys = 100, bool verbose = false) {
+    int ntoys = 100, double muRange = 40., bool verbose = false) {
 
   // force all systematics to be off (i.e. set all
   // nuisance parameters as constat
@@ -85,6 +85,12 @@ HypoTestResult *DiscoveryTestStatToys(
     const auto limitLow = std::max(2.0 - paramMax, 0.0);
     paramReal->setRange(limitLow, paramMax);
   }
+
+  // Set mu range for better fit convergence
+  const auto mu = dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
+  Info("DiscoveryTestStatToys", "Setting range of POI to %f", std::abs(muRange));
+  mu->setRange(-std::abs(muRange), std::abs(muRange));
+  mu->Print();
 
   // make b model
   ModelConfig *bModel = nullptr;

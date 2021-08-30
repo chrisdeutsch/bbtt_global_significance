@@ -31,4 +31,10 @@ script_dir="$(readlink -e bbtt_global_significance/scripts)"
 PATH="${script_dir}:${PATH}"
 
 outfile="${outdir}/toy_${seed}.csv"
-runDiscoveryTestStatToys.py "${infile}" -s "${seed}" -n "${ntoys}" -o "${outfile}" 2>&1
+runDiscoveryTestStatToys.py \
+    "${infile}" \
+    -s "${seed}" \
+    -n "${ntoys}" \
+    -o "${outfile}" \
+    --mu-range 5.0 \
+    2>&1
