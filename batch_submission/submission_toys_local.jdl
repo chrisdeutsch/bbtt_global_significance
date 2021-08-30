@@ -3,7 +3,7 @@ Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "low"
-+MaxRuntimeHours=4
++MaxRuntimeHours=6
 Request_memory = 2GB
 Request_disk = 5GB
 
@@ -16,7 +16,7 @@ Output                = logs/out.$(ClusterId).$(Process)
 Log                   = logs/log.$(ClusterId)
 
 Seed = $$([ $(ProcId) + $(SeedOffset) ])
-NToysPerJob = 10
+NToysPerJob = 50
 
 Workspace = /cephfs/user/s6crdeut/Workspaces/2021_08_26_CONF/workspaces/combined/systs/$(Mass).root
 Outdir = /cephfs/user/s6crdeut/WSMakerToys_q0/combined_$(Mass)

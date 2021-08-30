@@ -14,7 +14,8 @@ parser.add_argument("-n", "--ntoys", type=int, default=10)
 parser.add_argument("--workspace-name", default="combined")
 parser.add_argument("--model-config", default="ModelConfig")
 parser.add_argument("--data-name", default="obsData")
-parser.add_argument("--mu-range", default=40., type=float)
+
+parser.add_argument("--mu-range", default=15., type=float)
 
 parser.add_argument("--optimizer-strategy", type=int, default=None)
 parser.add_argument("-v", "--verbose", action="store_true")
@@ -43,7 +44,8 @@ R.RooRandom.randomGenerator().SetSeed(10000 + args.seed)
 R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
 
 if args.optimizer_strategy is not None:
-    print("Overwriting default minimizer strategy: New strategy = {}".format(args.optimizer_strategy))
+    print("Overwriting default minimizer strategy: New strategy = {}"
+          .format(args.optimizer_strategy))
     R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
 
 if args.verbose:
@@ -90,10 +92,14 @@ print("Total time: {:2f} s".format(total_time))
 print("Time per toy: {:2f} s/toy".format(time_per_toy))
 
 with open(args.outfile, "w") as csvfile:
-    fieldnames = ["ts", "muhat", "status_uncond", "status_cond", "seed", "index", "avg_time"]
+    fieldnames = ["ts", "muhat",
+                  "status_uncond", "status_cond",
+                  "seed", "index",
+                  "avg_time", "mu_range"]
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for row in results:
         row["avg_time"] = time_per_toy
+        row["mu_range"] = args.mu_range
         writer.writerow(row)
