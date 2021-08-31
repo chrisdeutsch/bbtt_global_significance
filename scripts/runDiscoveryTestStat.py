@@ -10,9 +10,14 @@ parser.add_argument("--workspace-name", default="combined")
 parser.add_argument("--model-config", default="ModelConfig")
 parser.add_argument("--data-name", default="obsData")
 
+parser.add_argument("--mu-range", default=15., type=float)
+parser.add_argument("--optimizer-strategy", type=int, default=2)
+
 parser.add_argument("-o", "--outfile", default=None)
 parser.add_argument("-m", "--mass", type=int, default=None)
 parser.add_argument("-i", "--index", type=int, default=None)
+
+parser.add_argument("-v", "--verbose", action="store_true")
 
 args = parser.parse_args()
 
@@ -26,13 +31,15 @@ R.gROOT.SetBatch(True)
 R.gROOT.ProcessLine(".L {}/DiscoveryTestStat.C++".format(macro_path))
 
 R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
-R.Math.MinimizerOptions.SetDefaultStrategy(2)
+R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
 
 ret = R.DiscoveryTestStat(
     args.infile,
     args.workspace_name,
     args.model_config,
-    args.data_name)
+    args.data_name,
+    args.mu_range,
+    args.verbose)
 
 
 # Warning: test statistic is the likelihood ratio and not q0: q0 = 2 * LLR

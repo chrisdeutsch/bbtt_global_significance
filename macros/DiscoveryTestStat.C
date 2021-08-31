@@ -1,5 +1,7 @@
 #include "RooAbsPdf.h"
+#include "RooConstVar.h"
 #include "RooDataSet.h"
+#include "RooPoisson.h"
 #include "RooRealSumPdf.h"
 #include "RooRealVar.h"
 #include "RooStats/ModelConfig.h"
@@ -25,7 +27,7 @@ struct DiscoveryTestStatResult {
 DiscoveryTestStatResult DiscoveryTestStat(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
-    bool verbose = false) {
+    double muRange = 40., bool verbose = false) {
 
   // change poi snapshot value for S+B model (needed for expected p0
   // values)
@@ -87,11 +89,19 @@ DiscoveryTestStatResult DiscoveryTestStat(
       return result;
     }
 
-    const auto paramMin = paramReal->getMin();
-    const auto paramMax = paramReal->getMax();
-    const auto limitLow = std::max(2.0 - paramMax, 0.0);
-    paramReal->setRange(limitLow, paramMax);
+    const auto constraint = dynamic_cast<RooPoisson *>(w->pdf(name + "_constraint"));
+    const auto tau = dynamic_cast<RooConstVar *>(w->obj(name + "_tau"));
+    if (constraint && tau) {
+      const auto error = TMath::Sqrt(1.0 / tau->getVal());
+      paramReal->setRange(std::max(0.0, 1. - 5. * error), 1. + 5. * error);
+    }
   }
+
+  // Set mu range for better fit convergence
+  const auto mu = dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
+  Info("DiscoveryTestStatToys", "Setting range of POI to %f", std::abs(muRange));
+  mu->setRange(-std::abs(muRange), std::abs(muRange));
+  mu->Print();
 
   // make b model
   ModelConfig *bModel = nullptr;

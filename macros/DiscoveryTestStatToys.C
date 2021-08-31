@@ -1,5 +1,7 @@
 #include "RooAbsPdf.h"
+#include "RooConstVar.h"
 #include "RooDataSet.h"
+#include "RooPoisson.h"
 #include "RooRealSumPdf.h"
 #include "RooRealVar.h"
 #include "RooStats/ModelConfig.h"
@@ -77,13 +79,15 @@ HypoTestResult *DiscoveryTestStatToys(
     const auto paramReal = dynamic_cast<RooRealVar *>(param);
     if (!paramReal) {
       Error("DiscoveryTestStatToys", "Cannot cast NP to RooRealVar");
-      return nullptr;
+      return result;
     }
 
-    const auto paramMin = paramReal->getMin();
-    const auto paramMax = paramReal->getMax();
-    const auto limitLow = std::max(2.0 - paramMax, 0.0);
-    paramReal->setRange(limitLow, paramMax);
+    const auto constraint = dynamic_cast<RooPoisson *>(w->pdf(name + "_constraint"));
+    const auto tau = dynamic_cast<RooConstVar *>(w->obj(name + "_tau"));
+    if (constraint && tau) {
+      const auto error = TMath::Sqrt(1.0 / tau->getVal());
+      paramReal->setRange(std::max(0.0, 1. - 5. * error), 1. + 5. * error);
+    }
   }
 
   // Set mu range for better fit convergence
