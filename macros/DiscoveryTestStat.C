@@ -29,10 +29,6 @@ DiscoveryTestStatResult DiscoveryTestStat(
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
     double muRange = 40., bool verbose = false) {
 
-  // change poi snapshot value for S+B model (needed for expected p0
-  // values)
-  const double poiValue = -1;
-
   // Profile likelihood test statistic print level
   const int printLevel = verbose ? 2 : 1;
 
@@ -101,6 +97,7 @@ DiscoveryTestStatResult DiscoveryTestStat(
   const auto mu = dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
   Info("DiscoveryTestStatToys", "Setting range of POI to %f", std::abs(muRange));
   mu->setRange(-std::abs(muRange), std::abs(muRange));
+  mu->setVal(0.0);
   mu->Print();
 
   // make b model
@@ -113,24 +110,25 @@ DiscoveryTestStatResult DiscoveryTestStat(
     bModel->SetName(TString(modelSBName) + TString("B_only"));
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(bModel->GetParametersOfInterest()->first());
-    if (!var)
+    if (!var) {
+      Error("DiscoveryTestStat", "Cannot retrieve POI");
       return result;
-    double oldval = var->getVal();
+    }
     var->setVal(0);
     bModel->SetSnapshot(RooArgSet(*var));
-    var->setVal(oldval);
   }
 
-  if (!sbModel->GetSnapshot() || poiValue > 0) {
+  if (!sbModel->GetSnapshot()) {
     Info("DiscoveryTestStat",
          "Model %s has no snapshot  - make one using model poi", modelSBName);
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
-    if (!var) { return result; }
-    double oldval = var->getVal();
-    if (poiValue > 0) { var->setVal(poiValue); }
+    if (!var) {
+      Error("DiscoveryTestStat", "Cannot retrieve POI");
+      return result;
+    }
+    var->setVal(0.0);
     sbModel->SetSnapshot(RooArgSet(*var));
-    if (poiValue > 0) { var->setVal(oldval); }
   }
 
   // Test statistic

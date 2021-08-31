@@ -57,7 +57,8 @@ if args.outfile:
         fieldnames = [
             "index", "mass", "q0", "muhat",
             "uncond_status", "uncond_minNLL",
-            "cond_status", "cond_minNLL"
+            "cond_status", "cond_minNLL",
+            "mu_range"
         ]
 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -72,4 +73,5 @@ if args.outfile:
             "uncond_minNLL": ret.uncond_minNLL,
             "cond_status": ret.cond_status,
             "cond_minNLL": ret.cond_minNLL,
+            "mu_range": args.mu_range,
         })
