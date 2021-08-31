@@ -41,7 +41,6 @@ ret = R.DiscoveryTestStat(
     args.mu_range,
     args.verbose)
 
-
 # Warning: test statistic is the likelihood ratio and not q0: q0 = 2 * LLR
 print("Likelihood-ratio: {:.5f}".format(ret.ts))
 print("q0: {:.5f}".format(2 * ret.ts))

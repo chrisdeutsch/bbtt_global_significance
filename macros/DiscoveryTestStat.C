@@ -73,10 +73,22 @@ DiscoveryTestStatResult DiscoveryTestStat(
     return result;
   }
 
+  // Set sensible limits, starting points for normalisation factors
   // Fix lower bound for gammas to avoid large logarithms
   const auto nuis = sbModel->GetNuisanceParameters();
   for (const auto param : *nuis) {
     const TString name = param->GetName();
+
+    if (name.EqualTo("ATLAS_norm_Zhf")) {
+      const auto zhfnorm = dynamic_cast<RooRealVar *>(param);
+      zhfnorm->setVal(1.35);
+      zhfnorm->setRange(0.5, 2.5);
+    } else if (name.EqualTo("ATLAS_norm_ttbar")) {
+      const auto ttbarnorm = dynamic_cast<RooRealVar *>(param);
+      ttbarnorm->setVal(0.97);
+      ttbarnorm->setRange(0.5, 2.5);
+    }
+
     if (!name.BeginsWith("gamma_stat_")) { continue; }
 
     const auto paramReal = dynamic_cast<RooRealVar *>(param);

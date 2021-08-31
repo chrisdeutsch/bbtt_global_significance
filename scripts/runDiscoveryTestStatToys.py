@@ -17,7 +17,7 @@ parser.add_argument("--data-name", default="obsData")
 
 parser.add_argument("--mu-range", default=15., type=float)
 
-parser.add_argument("--optimizer-strategy", type=int, default=None)
+parser.add_argument("--optimizer-strategy", type=int, default=1)
 parser.add_argument("-v", "--verbose", action="store_true")
 
 args = parser.parse_args()
@@ -42,11 +42,7 @@ def retrieve_arg(argset, argname):
 
 R.RooRandom.randomGenerator().SetSeed(10000 + args.seed)
 R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
-
-if args.optimizer_strategy is not None:
-    print("Overwriting default minimizer strategy: New strategy = {}"
-          .format(args.optimizer_strategy))
-    R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
+R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
 
 if args.verbose:
     # Doesn't really do anything...

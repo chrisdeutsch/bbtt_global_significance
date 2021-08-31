@@ -25,10 +25,6 @@ HypoTestResult *DiscoveryTestStatToys(
   // nuisance parameters as constat
   const bool noSystematics = false;
 
-  // change poi snapshot value for S+B model (needed for expected p0
-  // values)
-  const double poiValue = -1;
-
   // Profile likelihood test statistic print level
   const int printLevel = verbose ? 2 : 1;
 
@@ -70,16 +66,28 @@ HypoTestResult *DiscoveryTestStatToys(
     return nullptr;
   }
 
+  // Set sensible limits, starting points for normalisation factors
   // Fix lower bound for gammas to avoid large logarithms
   const auto nuis = sbModel->GetNuisanceParameters();
   for (const auto param : *nuis) {
     const TString name = param->GetName();
+
+    if (name.EqualTo("ATLAS_norm_Zhf")) {
+      const auto zhfnorm = dynamic_cast<RooRealVar *>(param);
+      zhfnorm->setVal(1.35);
+      zhfnorm->setRange(0.5, 2.5);
+    } else if (name.EqualTo("ATLAS_norm_ttbar")) {
+      const auto ttbarnorm = dynamic_cast<RooRealVar *>(param);
+      ttbarnorm->setVal(0.97);
+      ttbarnorm->setRange(0.5, 2.5);
+    }
+
     if (!name.BeginsWith("gamma_stat_")) { continue; }
 
     const auto paramReal = dynamic_cast<RooRealVar *>(param);
     if (!paramReal) {
       Error("DiscoveryTestStatToys", "Cannot cast NP to RooRealVar");
-      return result;
+      return nullptr;
     }
 
     const auto constraint = dynamic_cast<RooPoisson *>(w->pdf(name + "_constraint"));
@@ -106,24 +114,25 @@ HypoTestResult *DiscoveryTestStatToys(
     bModel->SetName(TString(modelSBName) + TString("B_only"));
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(bModel->GetParametersOfInterest()->first());
-    if (!var)
+    if (!var) {
+      Error("DiscoveryTestStatToys", "Cannot retrieve POI");
       return nullptr;
-    double oldval = var->getVal();
+    }
     var->setVal(0);
     bModel->SetSnapshot(RooArgSet(*var));
-    var->setVal(oldval);
   }
 
-  if (!sbModel->GetSnapshot() || poiValue > 0) {
+  if (!sbModel->GetSnapshot()) {
     Info("DiscoveryTestStatToys",
          "Model %s has no snapshot  - make one using model poi", modelSBName);
     RooRealVar *var =
         dynamic_cast<RooRealVar *>(sbModel->GetParametersOfInterest()->first());
-    if (!var) { return nullptr; }
-    double oldval = var->getVal();
-    if (poiValue > 0) { var->setVal(poiValue); }
+    if (!var) {
+      Error("DiscoveryTestStatToys", "Cannot retrieve POI");
+      return nullptr;
+    }
+    var->setVal(0.0);
     sbModel->SetSnapshot(RooArgSet(*var));
-    if (poiValue > 0) { var->setVal(oldval); }
   }
 
   // Test statistic
