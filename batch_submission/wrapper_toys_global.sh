@@ -69,11 +69,39 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
                     600 700 800 900 1000 1100 1200 1400 1600; do
         ws_name="combined_inputs.combined_pseudodata${nToy}_m${mass}"
 
+        mu_range=""
+        case "${mass}" in
+            251)  mu_range="8.0"  ;;
+            260)  mu_range="15.8" ;;
+            280)  mu_range="17.1" ;;
+            300)  mu_range="12.6" ;;
+            325)  mu_range="11.0" ;;
+            350)  mu_range="7.1"  ;;
+            375)  mu_range="4.0"  ;;
+            400)  mu_range="3.2"  ;;
+            450)  mu_range="1.2"  ;;
+            500)  mu_range="1.1"  ;;
+            550)  mu_range="0.7"  ;;
+            600)  mu_range="0.6"  ;;
+            700)  mu_range="0.4"  ;;
+            800)  mu_range="0.3"  ;;
+            900)  mu_range="0.3"  ;;
+            1000) mu_range="0.2"  ;;
+            1100) mu_range="0.4"  ;;
+            1200) mu_range="0.3"  ;;
+            1400) mu_range="0.4"  ;;
+            1600) mu_range="0.6"  ;;
+            *) { echo "Unknown mass: '${mass}'"; exit 1; } ;;
+        esac
+
         runDiscoveryTestStat.py \
             "WSMaker_HH_bbtautau/output/${ws_name}/workspaces/combined/${mass}.root" \
             -o /jwd/outputs/"toy_m${mass}.csv" \
             -m "${mass}" \
             -i "${nToy}" \
+            --mu-range "${mu_range}" \
+            --optimizer-strategy 1 \
+            2>&1 \
             || { echo "Error fitting toys"; exit 1; }
     done
 )

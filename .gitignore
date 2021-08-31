@@ -3,3 +3,4 @@
 *.so
 *.pcm
 batch_submission/logs
+*_ACLiC_*
