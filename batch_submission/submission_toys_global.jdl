@@ -3,9 +3,9 @@ Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "high"
-+MaxRuntimeHours=2
++MaxRuntimeHours=4
 Request_memory = 2GB
-Request_disk = 5GB
+Request_disk = 12GB
 
 Transfer_executable   = True
 Transfer_input_files  = ""
@@ -21,6 +21,4 @@ nToy = $(ProcId)
 
 Arguments = $(Indir) $(Outdir) $(nToy)
 
-Queue 5
-
-# Queue 10000
+Queue 10000

@@ -28,8 +28,8 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
     (cd build/ && cmake .. && make) || { echo "Failure compiling WSMaker"; exit 1; }
 
     # Replace input and output dir (they are symlinked to cephfs)
-    rm -r inputs output
-    mkdir inputs output
+    [[ -e inputs ]] && rm -r inputs
+    [[ -e output ]] && rm -r output
 
     # Copy input histograms
     mkdir -p inputs/combined_inputs
