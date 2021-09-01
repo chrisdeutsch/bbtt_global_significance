@@ -3,7 +3,7 @@ Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "high"
-+MaxRuntimeHours=4
++MaxRuntimeHours=8
 Request_memory = 2GB
 Request_disk = 12GB
 
