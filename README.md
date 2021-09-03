@@ -28,6 +28,17 @@ Creates a couple of diagnostic plots (avg. time per toy, fit failure
 rate) from a set of toys.
 
 
+`evalGlobalSigToys.py`:
+
+Evaluates the global significance using the generated toys and
+generates a couple of diagnostic plots (i.e. mean muhat of toys, fit
+failure rate).
+
+```bash
+evalGlobalSigToys.py all_toys.csv --outdir results_combined/
+```
+
+
 ## Batch Submission
 
 The scripts in `batch_submission` are written to be run from inside of
