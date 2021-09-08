@@ -22,6 +22,10 @@ struct DiscoveryTestStatResult {
   double uncond_minNLL = 0.0;
   double cond_status = 0.0;
   double cond_minNLL = 0.0;
+  double cond_zhf = 0.0;
+  double uncond_zhf = 0.0;
+  double cond_ttbar = 0.0;
+  double uncond_ttbar = 0.0;
 };
 
 DiscoveryTestStatResult DiscoveryTestStat(
@@ -164,6 +168,10 @@ DiscoveryTestStatResult DiscoveryTestStat(
   const auto uncond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitUncond_minNLL"))->getVal();
   const auto cond_status = dynamic_cast<RooRealVar *>(details->find("fitCond_fitStatus"))->getVal();
   const auto cond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitCond_minNLL"))->getVal();
+  const auto cond_zhf = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_Zhf"))->getVal();
+  const auto uncond_zhf = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_Zhf"))->getVal();
+  const auto cond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_ttbar"))->getVal();
+  const auto uncond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_ttbar"))->getVal();
 
   // Collect results
   result.ts = ts;
@@ -172,6 +180,10 @@ DiscoveryTestStatResult DiscoveryTestStat(
   result.uncond_minNLL = uncond_minNLL;
   result.cond_status = cond_status;
   result.cond_minNLL = cond_minNLL;
+  result.cond_zhf = cond_zhf;
+  result.uncond_zhf = uncond_zhf;
+  result.cond_ttbar = cond_ttbar;
+  result.uncond_ttbar = uncond_ttbar;
 
   return result;
 }

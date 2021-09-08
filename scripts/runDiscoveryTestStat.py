@@ -49,6 +49,10 @@ print("uncond_status: {}".format(ret.uncond_status))
 print("uncond_minNLL: {}".format(ret.uncond_minNLL))
 print("cond_status: {}".format(ret.cond_status))
 print("cond_minNLL: {}".format(ret.cond_minNLL))
+print("cond_zhf: {}".format(ret.cond_zhf))
+print("uncond_zhf: {}".format(ret.uncond_zhf))
+print("cond_ttbar: {}".format(ret.cond_ttbar))
+print("uncond_ttbar: {}".format(ret.uncond_ttbar))
 
 
 if args.outfile:
@@ -57,6 +61,8 @@ if args.outfile:
             "index", "mass", "q0", "muhat",
             "uncond_status", "uncond_minNLL",
             "cond_status", "cond_minNLL",
+            "cond_zhf", "uncond_zhf",
+            "cond_ttbar", "uncond_ttbar",
             "mu_range"
         ]
 
@@ -72,5 +78,9 @@ if args.outfile:
             "uncond_minNLL": ret.uncond_minNLL,
             "cond_status": ret.cond_status,
             "cond_minNLL": ret.cond_minNLL,
+            "cond_zhf": ret.cond_zhf,
+            "uncond_zhf": ret.uncond_zhf,
+            "cond_ttbar": ret.cond_ttbar,
+            "uncond_ttbar": ret.uncond_ttbar,
             "mu_range": args.mu_range,
         })
