@@ -71,6 +71,11 @@ for i in range(null_details.numEntries()):
     uncond_status = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_fitStatus")
     cond_status = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_fitStatus")
 
+    cond_zhf = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_ATLAS_norm_Zhf")
+    uncond_zhf = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_ATLAS_norm_Zhf")
+    cond_ttbar = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_ATLAS_norm_ttbar")
+    uncond_ttbar = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_ATLAS_norm_ttbar")
+
     results.append({
         "seed": args.seed,
         "index": i,
@@ -78,6 +83,10 @@ for i in range(null_details.numEntries()):
         "muhat": muhat,
         "status_uncond": uncond_status,
         "status_cond": cond_status,
+        "zhf_norm_cond": cond_zhf,
+        "zhf_norm_uncond": uncond_zhf,
+        "ttbar_norm_cond": cond_ttbar,
+        "ttbar_norm_uncond": uncond_ttbar,
     })
 
 
@@ -91,7 +100,9 @@ with open(args.outfile, "w") as csvfile:
     fieldnames = ["ts", "muhat",
                   "status_uncond", "status_cond",
                   "seed", "index",
-                  "avg_time", "mu_range"]
+                  "avg_time", "mu_range",
+                  "zhf_norm_cond", "zhf_norm_uncond",
+                  "ttbar_norm_cond", "ttbar_norm_uncond"]
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
