@@ -7,8 +7,11 @@
 #include "RooStats/ModelConfig.h"
 #include "RooWorkspace.h"
 #include "TFile.h"
+#include "TLeaf.h"
 
 #include "RooStats/ProfileLikelihoodTestStat.h"
+
+#include <regex>
 
 
 using namespace RooFit;
@@ -31,7 +34,8 @@ struct DiscoveryTestStatResult {
 DiscoveryTestStatResult DiscoveryTestStat(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
-    double muRange = 40., bool verbose = false) {
+    double muRange = 40., const char *globs_tree = "", int globs_index = 0,
+    bool verbose = false) {
 
   // Profile likelihood test statistic print level
   const int printLevel = verbose ? 2 : 1;
@@ -75,6 +79,56 @@ DiscoveryTestStatResult DiscoveryTestStat(
   if (!data || !sbModel) {
     Error("DiscoveryTestStat", "data or ModelConfig was not found");
     return result;
+  }
+
+  // Set global observables
+  if (globs_tree && strlen(globs_tree)) {
+    const auto fin_globs = TFile::Open(globs_tree, "READ");
+    const auto tree = fin_globs->Get<TTree>("globs_tree");
+
+    const std::size_t len_sr = tree->GetBranch("globs_sr")->GetLeaf("globs_sr")->GetLenStatic();
+    const std::size_t len_zcr = tree->GetBranch("globs_zcr")->GetLeaf("globs_zcr")->GetLenStatic();
+
+    std::vector<float> globs_sr(len_sr, 0);
+    std::vector<float> globs_zcr(len_zcr, 0);
+
+    tree->SetBranchAddress("globs_sr", globs_sr.data());
+    tree->SetBranchAddress("globs_zcr", globs_zcr.data());
+    tree->GetEntry(globs_index);
+    std::cout << "Loading global observables from index " << globs_index << std::endl;
+
+    const std::regex global_gamma_regex(
+      "^nom_gamma_stat_.*(DZllbbCR|SpcTauHH).*bin_(\\d+)$",
+      std::regex_constants::ECMAScript);
+
+    for (auto param : *sbModel->GetGlobalObservables()) {
+      const std::string name = param->GetName();
+
+      std::smatch match;
+      if (std::regex_match(name, match, global_gamma_regex)) {
+        const auto region_str = match[1].str();
+        const auto bin_str = match[2].str();
+        const auto ibin = std::stoi(bin_str);
+
+        auto realParam = dynamic_cast<RooRealVar *>(param);
+        if (realParam) {
+          if (region_str == "DZllbbCR") {
+            std::cout << "Setting " << name << " --- "
+                      << realParam->getVal() << " -> " << globs_zcr[ibin] << std::endl;
+
+            realParam->setVal(globs_zcr[ibin]);
+          } else if (region_str == "SpcTauHH") {
+            std::cout << "Setting " << name << " --- "
+                      << realParam->getVal() << " -> " << globs_sr[ibin] << std::endl;
+
+            realParam->setVal(globs_sr[ibin]);
+          }
+        } else {
+          Error("DiscoveryTestStat", "Cannot set custom values for global observables");
+          return result;
+        }
+      }
+    }
   }
 
   // Set sensible limits, starting points for normalisation factors
@@ -145,6 +199,12 @@ DiscoveryTestStatResult DiscoveryTestStat(
     }
     var->setVal(0.0);
     sbModel->SetSnapshot(RooArgSet(*var));
+  }
+
+
+  std::cout << "Global observables in bModel" << std::endl;
+  for (auto param : *bModel->GetGlobalObservables()) {
+    param->Print();
   }
 
   // Test statistic

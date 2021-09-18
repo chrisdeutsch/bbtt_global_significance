@@ -19,6 +19,11 @@ parser.add_argument("-i", "--index", type=int, default=None)
 
 parser.add_argument("-v", "--verbose", action="store_true")
 
+parser.add_argument("--globs-tree", default="",
+                    help="Tree containing the global observables")
+parser.add_argument("--globs-index", default=0, type=int,
+                    help="Index in the tree that contains the values of the global observables")
+
 args = parser.parse_args()
 
 # Get macro directory to load needed ROOT macros
@@ -39,6 +44,8 @@ ret = R.DiscoveryTestStat(
     args.model_config,
     args.data_name,
     args.mu_range,
+    args.globs_tree,
+    args.globs_index,
     args.verbose)
 
 # Warning: test statistic is the likelihood ratio and not q0: q0 = 2 * LLR
