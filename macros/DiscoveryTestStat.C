@@ -17,6 +17,7 @@
 using namespace RooFit;
 using namespace RooStats;
 
+void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index);
 void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index);
 void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index);
 
@@ -84,8 +85,11 @@ DiscoveryTestStatResult DiscoveryTestStat(
   }
 
   // Set global observables
-  setGlobsHadHad(sbModel, globs_tree, globs_index);
-  setGlobsZCR(sbModel, globs_tree, globs_index);
+  if (globs_tree && strlen(globs_tree)) {
+    setGlobsAlpha(sbModel, globs_tree, globs_index);
+    setGlobsHadHad(sbModel, globs_tree, globs_index);
+    setGlobsZCR(sbModel, globs_tree, globs_index);
+  }
 
   // Set sensible limits, starting points for normalisation factors
   // Fix lower bound for gammas to avoid large logarithms
@@ -202,6 +206,43 @@ DiscoveryTestStatResult DiscoveryTestStat(
   result.uncond_ttbar = uncond_ttbar;
 
   return result;
+}
+
+
+void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index) {
+  if (!globs_tree || strlen(globs_tree) == 0) {
+    Error("setGlobsAlpha", "Cannot set global observables for systematics");
+    abort();
+  }
+
+  const auto fin_globs = TFile::Open(globs_tree, "READ");
+  const auto tree = fin_globs->Get<TTree>("globs_alphas");
+
+  std::map<std::string, float> branches;
+  for (auto branch : *tree->GetListOfBranches()) {
+    const std::string bname = branch->GetName();
+    branches[bname] = 0.f;
+    tree->SetBranchAddress(bname.c_str(), &branches[bname]);
+  }
+  tree->GetEntry(globs_index);
+
+
+  for (auto param : *model->GetGlobalObservables()) {
+    const std::string name = param->GetName();
+    if (name.rfind("nom_alpha_", 0) != 0) {
+      continue;
+    }
+
+    const auto it = branches.find(name);
+    if (it != branches.cend()) {
+      auto realParam = dynamic_cast<RooRealVar *>(param);
+      std::cout << "Setting " << name << " --- "
+                << realParam->getVal() << " -> " << it->second << std::endl;
+    } else {
+      std::cout << "Could not find glob " << name << std::endl;
+      abort();
+    }
+  }
 }
 
 
