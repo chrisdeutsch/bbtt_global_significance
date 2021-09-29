@@ -33,7 +33,7 @@ macro_path = os.path.abspath(macro_path)
 
 import ROOT as R
 R.gROOT.SetBatch(True)
-R.gROOT.ProcessLine(".L {}/DiscoveryTestStat.C++".format(macro_path))
+R.gROOT.ProcessLine(".L {}/DiscoveryTestStat.C+".format(macro_path))
 
 R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
 R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
