@@ -24,6 +24,7 @@ void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index);
 struct DiscoveryTestStatResult {
   double ts = 0.0;
   double muhat = 0.0;
+  double muhat_pull = 0.0;
   double uncond_status = 0.0;
   double uncond_minNLL = 0.0;
   double cond_status = 0.0;
@@ -173,7 +174,7 @@ DiscoveryTestStatResult DiscoveryTestStat(
   // otherwise output is buggy if the first toy has negative muhat
   profll->SetOneSidedDiscovery(false);
   profll->SetPrintLevel(printLevel);
-  profll->EnableDetailedOutput();
+  profll->EnableDetailedOutput(true, true);
 
 
   const RooArgSet *nullSnapshot = bModel->GetSnapshot();
@@ -182,12 +183,18 @@ DiscoveryTestStatResult DiscoveryTestStat(
   Info("DiscoveryTestStat", "Test statistic on data: %f", ts);
 
   const auto details = profll->GetDetailedOutput();
+  // for (auto param : *details) {
+  //   std::cout << param->GetName() << std::endl;
+  // }
 
   const auto muhat = dynamic_cast<RooRealVar *>(details->find("fitUncond_SigXsecOverSM"))->getVal();
+  const auto muhat_pull = dynamic_cast<RooRealVar *>(details->find("fitUncond_SigXsecOverSM_pull"))->getVal();
+
   const auto uncond_status = dynamic_cast<RooRealVar *>(details->find("fitUncond_fitStatus"))->getVal();
   const auto uncond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitUncond_minNLL"))->getVal();
   const auto cond_status = dynamic_cast<RooRealVar *>(details->find("fitCond_fitStatus"))->getVal();
   const auto cond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitCond_minNLL"))->getVal();
+
   const auto cond_zhf = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_Zhf"))->getVal();
   const auto uncond_zhf = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_Zhf"))->getVal();
   const auto cond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_ttbar"))->getVal();
@@ -196,6 +203,7 @@ DiscoveryTestStatResult DiscoveryTestStat(
   // Collect results
   result.ts = ts;
   result.muhat = muhat;
+  result.muhat_pull = muhat_pull;
   result.uncond_status = uncond_status;
   result.uncond_minNLL = uncond_minNLL;
   result.cond_status = cond_status;
@@ -238,9 +246,10 @@ void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index) 
       auto realParam = dynamic_cast<RooRealVar *>(param);
       std::cout << "Setting " << name << " --- "
                 << realParam->getVal() << " -> " << it->second << std::endl;
+      realParam->setVal(it->second);
     } else {
       std::cout << "Could not find glob " << name << std::endl;
-      abort();
+      //abort();
     }
   }
 }
@@ -278,7 +287,6 @@ void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index)
       if (realParam) {
         std::cout << "Setting " << name << " --- "
                   << realParam->getVal() << " -> " << globs[ibin] << std::endl;
-
         realParam->setVal(globs[ibin]);
       }  else {
         Error("setGlobsHadHad", "Cannot set custom values for global observables");

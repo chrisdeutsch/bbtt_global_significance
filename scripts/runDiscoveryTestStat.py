@@ -52,6 +52,7 @@ ret = R.DiscoveryTestStat(
 print("Likelihood-ratio: {:.5f}".format(ret.ts))
 print("q0: {:.5f}".format(2 * ret.ts))
 print("muhat: {:.5f}".format(ret.muhat))
+print("muhat pull: {:.5f}".format(ret.muhat_pull))
 print("uncond_status: {}".format(ret.uncond_status))
 print("uncond_minNLL: {}".format(ret.uncond_minNLL))
 print("cond_status: {}".format(ret.cond_status))
@@ -66,6 +67,7 @@ if args.outfile:
     with open(args.outfile, "w") as f:
         fieldnames = [
             "index", "mass", "q0", "muhat",
+            "muhat_pull",
             "uncond_status", "uncond_minNLL",
             "cond_status", "cond_minNLL",
             "cond_zhf", "uncond_zhf",
@@ -81,6 +83,7 @@ if args.outfile:
             "mass": args.mass,
             "q0": 2 * ret.ts,
             "muhat": ret.muhat,
+            "muhat_pull": ret.muhat_pull,
             "uncond_status": ret.uncond_status,
             "uncond_minNLL": ret.uncond_minNLL,
             "cond_status": ret.cond_status,
