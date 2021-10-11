@@ -7,17 +7,24 @@
 #include "RooStats/ModelConfig.h"
 #include "RooWorkspace.h"
 #include "TFile.h"
+#include "TLeaf.h"
 
 #include "RooStats/ProfileLikelihoodTestStat.h"
+
+#include <regex>
 
 
 using namespace RooFit;
 using namespace RooStats;
 
+void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index);
+void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index);
+void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index);
 
 struct DiscoveryTestStatResult {
   double ts = 0.0;
   double muhat = 0.0;
+  double muhat_pull = 0.0;
   double uncond_status = 0.0;
   double uncond_minNLL = 0.0;
   double cond_status = 0.0;
@@ -26,12 +33,15 @@ struct DiscoveryTestStatResult {
   double uncond_zhf = 0.0;
   double cond_ttbar = 0.0;
   double uncond_ttbar = 0.0;
+  double uncond_covQual = 0.0;
+  double cond_covQual = 0.0;
 };
 
 DiscoveryTestStatResult DiscoveryTestStat(
     const char *filename = "", const char *workspaceName = "combined",
     const char *modelSBName = "ModelConfig", const char *dataName = "obsData",
-    double muRange = 40., bool verbose = false) {
+    double muRange = 40., const char *globs_tree = "", int globs_index = 0,
+    bool verbose = false) {
 
   // Profile likelihood test statistic print level
   const int printLevel = verbose ? 2 : 1;
@@ -75,6 +85,13 @@ DiscoveryTestStatResult DiscoveryTestStat(
   if (!data || !sbModel) {
     Error("DiscoveryTestStat", "data or ModelConfig was not found");
     return result;
+  }
+
+  // Set global observables
+  if (globs_tree && strlen(globs_tree)) {
+    setGlobsAlpha(sbModel, globs_tree, globs_index);
+    setGlobsHadHad(sbModel, globs_tree, globs_index);
+    setGlobsZCR(sbModel, globs_tree, globs_index);
   }
 
   // Set sensible limits, starting points for normalisation factors
@@ -147,13 +164,19 @@ DiscoveryTestStatResult DiscoveryTestStat(
     sbModel->SetSnapshot(RooArgSet(*var));
   }
 
+
+  std::cout << "Global observables in bModel" << std::endl;
+  for (auto param : *bModel->GetGlobalObservables()) {
+    param->Print();
+  }
+
   // Test statistic
   auto profll = std::make_unique<ProfileLikelihoodTestStat>(*bModel->GetPdf());
   // Need to force running the conditional fit even for muhat < 0
   // otherwise output is buggy if the first toy has negative muhat
   profll->SetOneSidedDiscovery(false);
   profll->SetPrintLevel(printLevel);
-  profll->EnableDetailedOutput();
+  profll->EnableDetailedOutput(true, true);
 
 
   const RooArgSet *nullSnapshot = bModel->GetSnapshot();
@@ -162,20 +185,31 @@ DiscoveryTestStatResult DiscoveryTestStat(
   Info("DiscoveryTestStat", "Test statistic on data: %f", ts);
 
   const auto details = profll->GetDetailedOutput();
+  // for (auto param : *details) {
+  //   std::cout << param->GetName() << std::endl;
+  // }
 
   const auto muhat = dynamic_cast<RooRealVar *>(details->find("fitUncond_SigXsecOverSM"))->getVal();
+  const auto muhat_pull = dynamic_cast<RooRealVar *>(details->find("fitUncond_SigXsecOverSM_pull"))->getVal();
+
   const auto uncond_status = dynamic_cast<RooRealVar *>(details->find("fitUncond_fitStatus"))->getVal();
   const auto uncond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitUncond_minNLL"))->getVal();
   const auto cond_status = dynamic_cast<RooRealVar *>(details->find("fitCond_fitStatus"))->getVal();
   const auto cond_minNLL = dynamic_cast<RooRealVar *>(details->find("fitCond_minNLL"))->getVal();
+
   const auto cond_zhf = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_Zhf"))->getVal();
   const auto uncond_zhf = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_Zhf"))->getVal();
   const auto cond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_ttbar"))->getVal();
   const auto uncond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_ttbar"))->getVal();
 
+  const auto uncond_covQual = dynamic_cast<RooRealVar *>(details->find("fitUncond_covQual"))->getVal();
+  const auto cond_covQual = dynamic_cast<RooRealVar *>(details->find("fitCond_covQual"))->getVal();
+
+
   // Collect results
   result.ts = ts;
   result.muhat = muhat;
+  result.muhat_pull = muhat_pull;
   result.uncond_status = uncond_status;
   result.uncond_minNLL = uncond_minNLL;
   result.cond_status = cond_status;
@@ -184,6 +218,135 @@ DiscoveryTestStatResult DiscoveryTestStat(
   result.uncond_zhf = uncond_zhf;
   result.cond_ttbar = cond_ttbar;
   result.uncond_ttbar = uncond_ttbar;
+  result.uncond_covQual = uncond_covQual;
+  result.cond_covQual = cond_covQual;
 
   return result;
+}
+
+
+void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index) {
+  if (!globs_tree || strlen(globs_tree) == 0) {
+    Error("setGlobsAlpha", "Cannot set global observables for systematics");
+    abort();
+  }
+
+  const auto fin_globs = TFile::Open(globs_tree, "READ");
+  const auto tree = fin_globs->Get<TTree>("globs_alphas");
+
+  std::map<std::string, float> branches;
+  for (auto branch : *tree->GetListOfBranches()) {
+    const std::string bname = branch->GetName();
+    branches[bname] = 0.f;
+    tree->SetBranchAddress(bname.c_str(), &branches[bname]);
+  }
+  tree->GetEntry(globs_index);
+
+
+  for (auto param : *model->GetGlobalObservables()) {
+    const std::string name = param->GetName();
+    if (name.rfind("nom_alpha_", 0) != 0) {
+      continue;
+    }
+
+    const auto it = branches.find(name);
+    if (it != branches.cend()) {
+      auto realParam = dynamic_cast<RooRealVar *>(param);
+      std::cout << "Setting " << name << " --- "
+                << realParam->getVal() << " -> " << it->second << std::endl;
+      realParam->setVal(it->second);
+    } else {
+      std::cout << "Could not find glob " << name << std::endl;
+      //abort();
+    }
+  }
+}
+
+
+void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index) {
+  if (!globs_tree || strlen(globs_tree) == 0) {
+    Error("setGlobsHadhad", "Cannot set global observables for hadhad");
+    abort();
+  }
+
+  const auto fin_globs = TFile::Open(globs_tree, "READ");
+  const auto tree = fin_globs->Get<TTree>("globs_hadhad");
+
+  const std::size_t len = tree->GetBranch("globs")->GetLeaf("globs")->GetLenStatic();
+  std::vector<float> globs(len, 0);
+  tree->SetBranchAddress("globs", globs.data());
+  tree->GetEntry(globs_index);
+
+  std::cout << "Loading global observables from index " << globs_index << std::endl;
+
+  const std::regex global_gamma_regex(
+    "^nom_gamma_stat_.*SpcTauHH.*bin_(\\d+)$",
+    std::regex_constants::ECMAScript);
+
+  for (auto param : *model->GetGlobalObservables()) {
+    const std::string name = param->GetName();
+    std::smatch match;
+
+    if (std::regex_match(name, match, global_gamma_regex)) {
+      const auto bin_str = match[1].str();
+      const auto ibin = std::stoi(bin_str);
+
+      auto realParam = dynamic_cast<RooRealVar *>(param);
+      if (realParam) {
+        std::cout << "Setting " << name << " --- "
+                  << realParam->getVal() << " -> " << globs[ibin] << std::endl;
+        realParam->setVal(globs[ibin]);
+      }  else {
+        Error("setGlobsHadHad", "Cannot set custom values for global observables");
+        abort();
+      }
+    }
+  }
+
+  fin_globs->Close();
+}
+
+
+void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index) {
+  if (!globs_tree || strlen(globs_tree) == 0) {
+    Error("setGlobsZCR", "Cannot set global observables for ZCR");
+    abort();
+  }
+
+  const auto fin_globs = TFile::Open(globs_tree, "READ");
+  const auto tree = fin_globs->Get<TTree>("globs_ZCR");
+
+  const std::size_t len = tree->GetBranch("globs")->GetLeaf("globs")->GetLenStatic();
+  std::vector<float> globs(len, 0);
+  tree->SetBranchAddress("globs", globs.data());
+  tree->GetEntry(globs_index);
+
+  std::cout << "Loading global observables from index " << globs_index << std::endl;
+
+  const std::regex global_gamma_regex(
+    "^nom_gamma_stat_.*DZllbbCR.*bin_(\\d+)$",
+    std::regex_constants::ECMAScript);
+
+  for (auto param : *model->GetGlobalObservables()) {
+    const std::string name = param->GetName();
+    std::smatch match;
+
+    if (std::regex_match(name, match, global_gamma_regex)) {
+      const auto bin_str = match[1].str();
+      const auto ibin = std::stoi(bin_str);
+
+      auto realParam = dynamic_cast<RooRealVar *>(param);
+      if (realParam) {
+        std::cout << "Setting " << name << " --- "
+                  << realParam->getVal() << " -> " << globs[ibin] << std::endl;
+
+        realParam->setVal(globs[ibin]);
+      }  else {
+        Error("setGlobsZCR", "Cannot set custom values for global observables");
+        abort();
+      }
+    }
+  }
+
+  fin_globs->Close();
 }
