@@ -33,6 +33,8 @@ struct DiscoveryTestStatResult {
   double uncond_zhf = 0.0;
   double cond_ttbar = 0.0;
   double uncond_ttbar = 0.0;
+  double uncond_covQual = 0.0;
+  double cond_covQual = 0.0;
 };
 
 DiscoveryTestStatResult DiscoveryTestStat(
@@ -200,6 +202,10 @@ DiscoveryTestStatResult DiscoveryTestStat(
   const auto cond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitCond_ATLAS_norm_ttbar"))->getVal();
   const auto uncond_ttbar = dynamic_cast<RooRealVar *>(details->find("fitUncond_ATLAS_norm_ttbar"))->getVal();
 
+  const auto uncond_covQual = dynamic_cast<RooRealVar *>(details->find("fitUncond_covQual"))->getVal();
+  const auto cond_covQual = dynamic_cast<RooRealVar *>(details->find("fitCond_covQual"))->getVal();
+
+
   // Collect results
   result.ts = ts;
   result.muhat = muhat;
@@ -212,6 +218,8 @@ DiscoveryTestStatResult DiscoveryTestStat(
   result.uncond_zhf = uncond_zhf;
   result.cond_ttbar = cond_ttbar;
   result.uncond_ttbar = uncond_ttbar;
+  result.uncond_covQual = uncond_covQual;
+  result.cond_covQual = cond_covQual;
 
   return result;
 }

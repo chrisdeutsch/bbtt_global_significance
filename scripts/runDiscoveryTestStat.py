@@ -61,6 +61,8 @@ print("cond_zhf: {}".format(ret.cond_zhf))
 print("uncond_zhf: {}".format(ret.uncond_zhf))
 print("cond_ttbar: {}".format(ret.cond_ttbar))
 print("uncond_ttbar: {}".format(ret.uncond_ttbar))
+print("cond_covQual: {}".format(ret.cond_covQual))
+print("uncond_covQual: {}".format(ret.uncond_covQual))
 
 
 if args.outfile:
@@ -72,7 +74,8 @@ if args.outfile:
             "cond_status", "cond_minNLL",
             "cond_zhf", "uncond_zhf",
             "cond_ttbar", "uncond_ttbar",
-            "mu_range"
+            "mu_range",
+            "uncond_covQual", "cond_covQual",
         ]
 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -93,4 +96,6 @@ if args.outfile:
             "cond_ttbar": ret.cond_ttbar,
             "uncond_ttbar": ret.uncond_ttbar,
             "mu_range": args.mu_range,
+            "uncond_covQual": ret.uncond_covQual,
+            "cond_covQual": ret.cond_covQual,
         })
