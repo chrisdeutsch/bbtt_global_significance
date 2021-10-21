@@ -18,8 +18,11 @@ using namespace RooFit;
 using namespace RooStats;
 
 void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index);
-void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index);
-void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index);
+
+enum class Channel { Hadhad, SLT, LTT , ZCR};
+void setGlobsGamma(ModelConfig *model, Channel chan,
+                   const char *infile, const char *treename, int globs_index);
+
 
 struct DiscoveryTestStatResult {
   double ts = 0.0;
@@ -90,8 +93,11 @@ DiscoveryTestStatResult DiscoveryTestStat(
   // Set global observables
   if (globs_tree && strlen(globs_tree)) {
     setGlobsAlpha(sbModel, globs_tree, globs_index);
-    setGlobsHadHad(sbModel, globs_tree, globs_index);
-    setGlobsZCR(sbModel, globs_tree, globs_index);
+
+    setGlobsGamma(sbModel, Channel::SLT, globs_tree, "globs_slt", globs_index);
+    setGlobsGamma(sbModel, Channel::LTT, globs_tree, "globs_ltt", globs_index);
+    setGlobsGamma(sbModel, Channel::Hadhad, globs_tree, "globs_hadhad", globs_index);
+    setGlobsGamma(sbModel, Channel::ZCR, globs_tree, "globs_ZCR", globs_index);
   }
 
   // Set sensible limits, starting points for normalisation factors
@@ -240,9 +246,11 @@ void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index) 
     branches[bname] = 0.f;
     tree->SetBranchAddress(bname.c_str(), &branches[bname]);
   }
+
+  std::cout << "Loading global observables from index " << globs_index << std::endl;
   tree->GetEntry(globs_index);
 
-
+  std::cout << "Setting globs (alphas)" << std::endl;
   for (auto param : *model->GetGlobalObservables()) {
     const std::string name = param->GetName();
     if (name.rfind("nom_alpha_", 0) != 0) {
@@ -257,37 +265,63 @@ void setGlobsAlpha(ModelConfig *model, const char *globs_tree, int globs_index) 
       realParam->setVal(it->second);
     } else {
       std::cout << "Could not find glob " << name << std::endl;
-      //abort();
+      abort();
     }
   }
 }
 
 
-void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index) {
-  if (!globs_tree || strlen(globs_tree) == 0) {
-    Error("setGlobsHadhad", "Cannot set global observables for hadhad");
+void setGlobsGamma(ModelConfig *model, Channel chan,
+                   const char *infile, const char *treename,
+                   int globs_index) {
+  if (!infile || strlen(infile) == 0) {
+    Error("setGammaGlobs", "Cannot set global observables for gammas");
     abort();
   }
 
-  const auto fin_globs = TFile::Open(globs_tree, "READ");
-  const auto tree = fin_globs->Get<TTree>("globs_hadhad");
+  const auto fin_globs = TFile::Open(infile, "READ");
+  const auto tree = fin_globs->Get<TTree>(treename);
 
+  // Figure out how many bins there are and load into array
   const std::size_t len = tree->GetBranch("globs")->GetLeaf("globs")->GetLenStatic();
   std::vector<float> globs(len, 0);
   tree->SetBranchAddress("globs", globs.data());
-  tree->GetEntry(globs_index);
 
   std::cout << "Loading global observables from index " << globs_index << std::endl;
+  tree->GetEntry(globs_index);
 
-  const std::regex global_gamma_regex(
-    "^nom_gamma_stat_.*SpcTauHH.*bin_(\\d+)$",
-    std::regex_constants::ECMAScript);
+  // Pattern used to get the global observables with a group
+  // specifying the bin number
+  const char *regex_pattern;
+  switch (chan) {
+  case Channel::Hadhad:
+    std::cout << "Setting globs for channel: Hadhad" << std::endl;
+    regex_pattern = "^nom_gamma_stat_.*SpcTauHH.*bin_(\\d+)$";
+    break;
+  case Channel::SLT:
+    std::cout << "Setting globs for channel: SLT" << std::endl;
+    regex_pattern = "^nom_gamma_stat_.*SpcTauLH_.*LTT0.*bin_(\\d+)$";
+    break;
+  case Channel::LTT:
+    std::cout << "Setting globs for channel: LTT" << std::endl;
+    regex_pattern = "^nom_gamma_stat_.*SpcTauLH_.*LTT1.*bin_(\\d+)$";
+    break;
+  case Channel::ZCR:
+    std::cout << "Setting globs for channel: ZCR" << std::endl;
+    regex_pattern = "^nom_gamma_stat_.*DZllbbCR.*bin_(\\d+)$";
+    break;
+  default:
+    Error("setGammaGlobs", "Unknown channel!");
+    abort();
+  }
 
+  // Setting the global observables
+  const std::regex regex(regex_pattern, std::regex_constants::ECMAScript);
   for (auto param : *model->GetGlobalObservables()) {
     const std::string name = param->GetName();
     std::smatch match;
 
-    if (std::regex_match(name, match, global_gamma_regex)) {
+    if (std::regex_match(name, match, regex)) {
       const auto bin_str = match[1].str();
       const auto ibin = std::stoi(bin_str);
 
@@ -297,52 +331,7 @@ void setGlobsHadHad(ModelConfig *model, const char *globs_tree, int globs_index)
                   << realParam->getVal() << " -> " << globs[ibin] << std::endl;
         realParam->setVal(globs[ibin]);
       }  else {
-        Error("setGlobsHadHad", "Cannot set custom values for global observables");
-        abort();
-      }
-    }
-  }
-
-  fin_globs->Close();
-}
-
-
-void setGlobsZCR(ModelConfig *model, const char *globs_tree, int globs_index) {
-  if (!globs_tree || strlen(globs_tree) == 0) {
-    Error("setGlobsZCR", "Cannot set global observables for ZCR");
-    abort();
-  }
-
-  const auto fin_globs = TFile::Open(globs_tree, "READ");
-  const auto tree = fin_globs->Get<TTree>("globs_ZCR");
-
-  const std::size_t len = tree->GetBranch("globs")->GetLeaf("globs")->GetLenStatic();
-  std::vector<float> globs(len, 0);
-  tree->SetBranchAddress("globs", globs.data());
-  tree->GetEntry(globs_index);
-
-  std::cout << "Loading global observables from index " << globs_index << std::endl;
-
-  const std::regex global_gamma_regex(
-    "^nom_gamma_stat_.*DZllbbCR.*bin_(\\d+)$",
-    std::regex_constants::ECMAScript);
-
-  for (auto param : *model->GetGlobalObservables()) {
-    const std::string name = param->GetName();
-    std::smatch match;
-
-    if (std::regex_match(name, match, global_gamma_regex)) {
-      const auto bin_str = match[1].str();
-      const auto ibin = std::stoi(bin_str);
-
-      auto realParam = dynamic_cast<RooRealVar *>(param);
-      if (realParam) {
-        std::cout << "Setting " << name << " --- "
-                  << realParam->getVal() << " -> " << globs[ibin] << std::endl;
-
-        realParam->setVal(globs[ibin]);
-      }  else {
-        Error("setGlobsZCR", "Cannot set custom values for global observables");
+        Error("setGammaGlobs", "Cannot set custom values for global observables");
         abort();
       }
     }
