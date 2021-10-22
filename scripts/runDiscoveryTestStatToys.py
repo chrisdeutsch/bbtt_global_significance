@@ -79,10 +79,10 @@ for i in range(null_details.numEntries()):
     results.append({
         "seed": args.seed,
         "index": i,
-        "ts": ts,
+        "q0": 2 * ts,
         "muhat": muhat,
-        "status_uncond": uncond_status,
-        "status_cond": cond_status,
+        "uncond_status": uncond_status,
+        "cond_status": cond_status,
         "zhf_norm_cond": cond_zhf,
         "zhf_norm_uncond": uncond_zhf,
         "ttbar_norm_cond": cond_ttbar,
@@ -97,8 +97,8 @@ print("Total time: {:2f} s".format(total_time))
 print("Time per toy: {:2f} s/toy".format(time_per_toy))
 
 with open(args.outfile, "w") as csvfile:
-    fieldnames = ["ts", "muhat",
-                  "status_uncond", "status_cond",
+    fieldnames = ["q0", "muhat",
+                  "uncond_status", "cond_status",
                   "seed", "index",
                   "avg_time", "mu_range",
                   "zhf_norm_cond", "zhf_norm_uncond",

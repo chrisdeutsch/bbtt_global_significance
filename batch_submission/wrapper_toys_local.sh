@@ -69,5 +69,5 @@ runDiscoveryTestStatToys.py \
     -n "${ntoys}" \
     -o "${outfile}" \
     --mu-range "${mu_range}" \
-    --optimizer-strategy 0 \
+    --optimizer-strategy 1 \
     2>&1
