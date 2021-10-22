@@ -147,6 +147,15 @@ HypoTestResult *DiscoveryTestStatToys(
   auto hypoCalc = new FrequentistCalculator(*data, *sbModel, *bModel);
   hypoCalc->SetToys(ntoys, 0);
 
+  for (const auto param : *sbModel->GetNuisanceParameters()) {
+    const auto realParam = dynamic_cast<RooRealVar *>(param);
+    std::cout << param->GetName() << " " << realParam->getVal() << std::endl;
+  }
+
+  // Do not get MLE for alternative models but use prefit instead
+  hypoCalc->SetConditionalMLEsNull(sbModel->GetNuisanceParameters());
+  hypoCalc->SetConditionalMLEsAlt(sbModel->GetNuisanceParameters());
+
   std::unique_ptr<ToyMCSampler> sampler;
   sampler.reset(dynamic_cast<ToyMCSampler *>(hypoCalc->GetTestStatSampler()));
   if (!sampler) {
