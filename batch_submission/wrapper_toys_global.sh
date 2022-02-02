@@ -112,7 +112,7 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
             --optimizer-strategy 1 \
             --globs-tree "WSMaker_HH_bbtautau/inputs/combined_inputs/toy_globs_${mass}.root" \
             --globs-index "${nToy}" \
-            2>&1 \
+            2>&1 > /dev/null \
             || { echo "Error fitting toys"; exit 1; }
     done
 )

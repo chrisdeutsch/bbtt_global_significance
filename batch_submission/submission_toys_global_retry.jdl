@@ -1,4 +1,4 @@
-Executable            = wrapper_toys_global.sh
+Executable            = wrapper_toys_global_retry.sh
 Universe              = vanilla
 
 +ContainerOS = "CentOS7"
@@ -16,10 +16,11 @@ Output                = logs/out.$(ClusterId).$(Process)
 Log                   = logs/log.$(ClusterId)
 
 Indir  = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/inputs
-Outdir = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/results
+Outdir = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/results_retried
 
-nToy = $(ProcId)
+nToy = 172
+mass = 1400
 
-Arguments = $(Indir) $(Outdir) $(nToy)
+Arguments = $(Indir) $(Outdir) $(nToy) $(mass)
 
-Queue 5000
+Queue

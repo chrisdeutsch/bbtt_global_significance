@@ -12,6 +12,7 @@ parser.add_argument("--data-name", default="obsData")
 
 parser.add_argument("--mu-range", default=15., type=float)
 parser.add_argument("--optimizer-strategy", type=int, default=2)
+parser.add_argument("--optimizer", choices=["Minuit2", "Minuit"], default="Minuit2")
 
 parser.add_argument("-o", "--outfile", default=None)
 parser.add_argument("-m", "--mass", type=int, default=None)
@@ -35,7 +36,7 @@ import ROOT as R
 R.gROOT.SetBatch(True)
 R.gROOT.ProcessLine(".L {}/DiscoveryTestStat.C+".format(macro_path))
 
-R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
+R.Math.MinimizerOptions.SetDefaultMinimizer(args.optimizer)
 R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
 
 ret = R.DiscoveryTestStat(
