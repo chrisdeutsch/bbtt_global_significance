@@ -21,7 +21,7 @@ cd /jwd/run
 tar -xzf /cephfs/user/s6crdeut/bbtt_global_significance.tar.gz \
     || { echo "Cannot get bbtt_global_significance"; exit 1; }
 
-tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
+tar -xzf /cephfs/user/s6crdeut/WSMaker_code_compiled.tar.gz \
     || { echo "Cannot get WSMaker code"; exit 1; }
 
 # Build workspaces
@@ -29,18 +29,16 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
     set +eu
     cd WSMaker_HH_bbtautau
     source setup.sh
-    rm -r build/*
-    (cd build/ && cmake .. && make) || { echo "Failure compiling WSMaker"; exit 1; }
     set -eu
 
     # Replace input and output dir (they are symlinked to cephfs)
     [[ -e inputs ]] && rm -r inputs
     [[ -e output ]] && rm -r output
-    mkdir inputs outputs
+    mkdir inputs output
 
     # Copy input histograms
     mkdir -p inputs/combined_inputs
-    cp "${indir}"/*.root inputs/combined_inputs/
+    ln -s "${indir}"/*.root inputs/combined_inputs/
 
     buildWorkspace4HH.py "combined_inputs" "combined_pseudodata${nToy}_m${mass}" \
                          --signal 2HDM --mass "${mass}" \

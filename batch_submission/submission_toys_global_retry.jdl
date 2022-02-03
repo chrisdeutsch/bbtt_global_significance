@@ -3,7 +3,7 @@ Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "high"
-+MaxRuntimeHours=8
++MaxRuntimeHours=4
 Request_memory = 2GB
 Request_disk = 12GB
 
@@ -18,9 +18,6 @@ Log                   = logs/log.$(ClusterId)
 Indir  = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/inputs
 Outdir = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/results_retried
 
-nToy = 172
-mass = 1400
-
 Arguments = $(Indir) $(Outdir) $(nToy) $(mass)
 
-Queue
+Queue nToy, mass from failed_fits.csv
