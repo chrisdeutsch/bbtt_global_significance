@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+set -eu
 for mass in 251 260 280 300 325 350 375 400 \
                 450 500 550 600 700 800 900 \
                 1000 1100 1200 1400 1600; do
+    outdir="/cephfs/user/s6crdeut/q0_toys/2022_02_07_combined/comb_${mass}"
+
+    echo "Creating output directory: ${outdir}"
+    mkdir -p "${outdir}"
 
     echo "Submitting m=${mass} ($(date))..."
     cluster=$(condor_submit Mass="${mass}" SeedOffset=0 submission_toys_local.jdl \
@@ -12,10 +17,12 @@ for mass in 251 260 280 300 325 350 375 400 \
     echo "Waiting for job to finish..."
     condor_wait "logs/log.${cluster}" || { echo "Job failed..."; exit 1; }
 
+    sleep 60
+
     # Merge csv files
     echo "Merging toys..."
     (
-        cd "/cephfs/user/s6crdeut/WSMakerToys_q0/combined_${mass}"
+        cd "${outdir}"
 
         {
             head -n 1 toy_0.csv
