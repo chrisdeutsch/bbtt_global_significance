@@ -3,7 +3,7 @@ Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "low"
-+MaxRuntimeHours=4
++MaxRuntimeHours=8
 Request_memory = 2GB
 Request_disk = 5GB
 
@@ -16,11 +16,12 @@ Output                = logs/out.$(ClusterId).$(Process)
 Log                   = logs/log.$(ClusterId)
 
 Seed = $$([ $(ProcId) + $(SeedOffset) ])
-NToysPerJob = 50
+NToysPerJob = 100
 
-Workspace = /cephfs/user/s6crdeut/Workspaces/2021_08_26_CONF/workspaces/combined/systs/$(Mass).root
-Outdir = /cephfs/user/s6crdeut/WSMakerToys_q0/combined_$(Mass)
+Workspace = /cephfs/user/s6crdeut/Workspaces/2022_01_29_PAPER_v5/workspaces/comb_2022_01_29.combined_res_m$(Mass)/workspaces/combined/$(Mass).root
+
+Outdir = /cephfs/user/s6crdeut/q0_toys/2022_02_07_combined/comb_$(Mass)
 
 Arguments = $(Workspace) $(Outdir) $(NToysPerJob) $(Seed)
 
-Queue 100
+Queue 1000

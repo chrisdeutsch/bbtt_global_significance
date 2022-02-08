@@ -1,9 +1,9 @@
-Executable            = wrapper_toys_global.sh
+Executable            = wrapper_toys_global_retry.sh
 Universe              = vanilla
 
 +ContainerOS = "CentOS7"
 +CephFS_IO = "high"
-+MaxRuntimeHours=8
++MaxRuntimeHours=4
 Request_memory = 2GB
 Request_disk = 12GB
 
@@ -16,10 +16,8 @@ Output                = logs/out.$(ClusterId).$(Process)
 Log                   = logs/log.$(ClusterId)
 
 Indir  = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/inputs
-Outdir = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/results
+Outdir = /cephfs/user/s6crdeut/WSMakerPseudoData/2022_02_02_paper_ws_comb/results_retried
 
-nToy = $(ProcId)
+Arguments = $(Indir) $(Outdir) $(nToy) $(mass)
 
-Arguments = $(Indir) $(Outdir) $(nToy)
-
-Queue 5000
+Queue nToy, mass from failed_fits.csv

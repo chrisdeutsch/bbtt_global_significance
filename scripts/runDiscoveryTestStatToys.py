@@ -18,6 +18,7 @@ parser.add_argument("--data-name", default="obsData")
 parser.add_argument("--mu-range", default=15., type=float)
 
 parser.add_argument("--optimizer-strategy", type=int, default=1)
+parser.add_argument("--optimizer", choices=["Minuit2", "Minuit"], default="Minuit2")
 parser.add_argument("-v", "--verbose", action="store_true")
 
 args = parser.parse_args()
@@ -41,7 +42,7 @@ def retrieve_arg(argset, argname):
 
 
 R.RooRandom.randomGenerator().SetSeed(10000 + args.seed)
-R.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
+R.Math.MinimizerOptions.SetDefaultMinimizer(args.optimizer)
 R.Math.MinimizerOptions.SetDefaultStrategy(args.optimizer_strategy)
 
 if args.verbose:
@@ -68,25 +69,37 @@ for i in range(null_details.numEntries()):
 
     ts = retrieve_arg(argset, "ModelConfigB_only_TS0")
     muhat = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_SigXsecOverSM")
+
     uncond_status = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_fitStatus")
+    uncond_minNLL = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_minNLL")
+
     cond_status = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_fitStatus")
+    cond_minNLL = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_minNLL")
 
     cond_zhf = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_ATLAS_norm_Zhf")
     uncond_zhf = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_ATLAS_norm_Zhf")
+
     cond_ttbar = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_ATLAS_norm_ttbar")
     uncond_ttbar = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_ATLAS_norm_ttbar")
 
+    uncond_covQual = retrieve_arg(argset, "ModelConfigB_only_TS0_fitUncond_covQual")
+    cond_covQual = retrieve_arg(argset, "ModelConfigB_only_TS0_fitCond_covQual")
+
     results.append({
-        "seed": args.seed,
         "index": i,
+        "seed": args.seed,
         "q0": 2 * ts,
         "muhat": muhat,
         "uncond_status": uncond_status,
+        "uncond_minNLL": uncond_minNLL,
         "cond_status": cond_status,
+        "cond_minNLL": cond_minNLL,
         "zhf_norm_cond": cond_zhf,
         "zhf_norm_uncond": uncond_zhf,
         "ttbar_norm_cond": cond_ttbar,
         "ttbar_norm_uncond": uncond_ttbar,
+        "uncond_covQual": uncond_covQual,
+        "cond_covQual": cond_covQual,
     })
 
 
@@ -97,12 +110,15 @@ print("Total time: {:2f} s".format(total_time))
 print("Time per toy: {:2f} s/toy".format(time_per_toy))
 
 with open(args.outfile, "w") as csvfile:
-    fieldnames = ["q0", "muhat",
-                  "uncond_status", "cond_status",
-                  "seed", "index",
-                  "avg_time", "mu_range",
-                  "zhf_norm_cond", "zhf_norm_uncond",
-                  "ttbar_norm_cond", "ttbar_norm_uncond"]
+    fieldnames = [
+        "q0", "muhat",
+        "uncond_status", "uncond_minNLL",
+        "cond_status", "cond_minNLL",
+        "seed", "index",
+        "avg_time", "mu_range",
+        "zhf_norm_cond", "zhf_norm_uncond",
+        "ttbar_norm_cond", "ttbar_norm_uncond",
+        "uncond_covQual", "cond_covQual"]
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()

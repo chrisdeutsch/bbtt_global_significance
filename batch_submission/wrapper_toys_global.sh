@@ -20,7 +20,7 @@ cd /jwd/run
 tar -xzf /cephfs/user/s6crdeut/bbtt_global_significance.tar.gz \
     || { echo "Cannot get bbtt_global_significance"; exit 1; }
 
-tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
+tar -xzf /cephfs/user/s6crdeut/WSMaker_code_compiled.tar.gz \
     || { echo "Cannot get WSMaker code"; exit 1; }
 
 # Build workspaces
@@ -28,18 +28,16 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
     set +eu
     cd WSMaker_HH_bbtautau
     source setup.sh
-    rm -r build/*
-    (cd build/ && cmake .. && make) || { echo "Failure compiling WSMaker"; exit 1; }
     set -eu
 
     # Replace input and output dir (they are symlinked to cephfs)
     [[ -e inputs ]] && rm -r inputs
     [[ -e output ]] && rm -r output
-    mkdir inputs outputs
+    mkdir inputs output
 
-    # Copy input histograms
+    # Link input histograms (faster via CephFS)
     mkdir -p inputs/combined_inputs
-    cp "${indir}"/*.root inputs/combined_inputs/
+    ln -s "${indir}"/*.root inputs/combined_inputs/
 
     for mass in 251 260 280 300 325 350 375 400 450 500 550 \
                 600 700 800 900 1000 1100 1200 1400 1600; do
@@ -112,7 +110,7 @@ tar -xzf /cephfs/user/s6crdeut/WSMaker_code.tar.gz \
             --optimizer-strategy 1 \
             --globs-tree "WSMaker_HH_bbtautau/inputs/combined_inputs/toy_globs_${mass}.root" \
             --globs-index "${nToy}" \
-            2>&1 \
+            2>&1 > /dev/null \
             || { echo "Error fitting toys"; exit 1; }
     done
 )
