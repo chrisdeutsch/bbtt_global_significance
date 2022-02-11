@@ -5,6 +5,7 @@ import pandas as pd
 import pickle
 from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.stats import norm
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
@@ -127,8 +128,23 @@ with open(args.outfile_ecdf, "wb") as fout:
 q0 =  np.linspace(0, 15, 200)
 sig = norm.ppf(cdf(q0))
 
+# Bootstrap uncertainty on sig
+band = []
+for i_bootstrap in tqdm(range(1000), "Bootstrap"):
+    bootstrap_sample = df_good["q0"].sample(frac=1, replace=True)
+    bootstrap_cdf = ECDF(bootstrap_sample)
+    band.append(norm.ppf(bootstrap_cdf(q0)))
+
+p = (100 - 68) / 2
+band = np.array(band)
+band = np.percentile(band, [p, 100 - p], axis=0)
+
 f = R.TF1("f", "sqrt(x)", 0, 15)
 g = R.TGraph(len(q0), q0, sig)
+
+err_hi = band[1] - sig
+err_lo = sig - band[0]
+g_err = R.TGraphAsymmErrors(len(q0), q0, sig, R.nullptr, R.nullptr, err_lo, err_hi)
 
 f.SetLineColor(R.kRed)
 f.SetLineWidth(2)
@@ -137,12 +153,14 @@ f.SetLineStyle(R.kDashed)
 g.SetLineColor(R.kBlue)
 g.SetLineWidth(2)
 
+g_err.SetFillColor(R.kBlue - 9)
 
-leg = R.TLegend(0.5, 0.4, 0.8, 0.5)
+leg = R.TLegend(0.5, 0.4, 0.8, 0.55)
 leg.SetTextFont(43)
 leg.SetTextSize(19)
 leg.SetBorderSize(0)
 leg.AddEntry(g, "Toys", "l")
+leg.AddEntry(g_err, "Uncertainty (68% CI)", "f")
 leg.AddEntry(f, "Asymptotic approx.", "l")
 
 
@@ -155,12 +173,15 @@ h_dummy.GetYaxis().SetTitle("Local Significance")
 c = R.TCanvas("c", "", 800, 600)
 
 h_dummy.Draw("AXIS")
-f.Draw("L,SAME")
+
+g_err.Draw("E3,SAME")
 g.Draw("L,SAME")
+f.Draw("L,SAME")
 
 leg.Draw()
 
 latex.DrawLatex(0.5, 0.35, "Combined #tau_{had}#tau_{had}, #tau_{lep}#tau_{had} (SLT, LTT)")
 latex.DrawLatex(0.5, 0.3, f"m_{{X}} = {args.mass} GeV")
 
+c.RedrawAxis()
 c.SaveAs(args.outfile_sig_plot)
