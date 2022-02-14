@@ -26,7 +26,9 @@ retried toys using alternative optimizer settings.
 
 The main analysis is performed in:
 
-- `evaluateLocalSignificanceAsymptotics.py`: Estimate the global
+- `evaluateLocalSignificance.py`: Make plots and csv files of the q0
+  sampling distributions.
+- `evaluateGlobalSignificanceAsymptotics.py`: Estimate the global
   significance using the asymptotic approximation for the local significances.
 - `evaluateGlobalSignificanceToys.py`: Estimate the global
   significance using toy experiments for the local significances.
