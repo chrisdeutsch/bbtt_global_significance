@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 import argparse
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+from scipy.stats import norm
+from statsmodels.distributions.empirical_distribution import ECDF
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
-import pickle
-from statsmodels.distributions.empirical_distribution import ECDF
-from scipy.stats import norm
-from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
 parser.add_argument("-m", "--mass", default="251")
-parser.add_argument("--outfile-ecdf", default="ecdf.pkl")
 parser.add_argument("--outfile-q0-plot", default="q0.pdf")
 parser.add_argument("--outfile-sig-plot", default="sig.pdf")
+parser.add_argument("--outfile-q0-csv", default="q0.csv")
 args = parser.parse_args()
 
 
@@ -49,8 +52,9 @@ print(f"Failed fits: {num_failed} ({100 * frac_failed:.1f} %)")
 df.loc[df["muhat"] <= 0, "q0"] = 0.0
 
 # Only keep good toys
-df_good = df.loc[~df["failed_fit"]].copy()
-#df_good = df.copy()
+#df_good = df.loc[~df["failed_fit"]].copy()
+df_good = df.copy()
+df_good.loc[df["failed_fit"], "q0"] = 0.0
 
 # Set negative q0 to 0
 df_good.loc[df_good["q0"] < 0, "q0"] = 0.0
@@ -69,7 +73,8 @@ for bin_idx in range(1, h_q0_sampling.GetNbinsX() + 1):
     width = hi_edge - lo_edge
 
     # Chi-squared part of the density
-    proba = 0.5 * (R.Math.chisquared_cdf(hi_edge, 1, 0) - R.Math.chisquared_cdf(lo_edge, 1, 0))
+    proba = 0.5 * (R.Math.chisquared_cdf(hi_edge, 1, 0)
+                   - R.Math.chisquared_cdf(lo_edge, 1, 0))
 
     # Delta function part of the density
     eps = 1e-9
@@ -109,7 +114,9 @@ h_q0.Draw("HIST,E0")
 h_q0_sampling.Draw("HIST,SAME")
 leg.Draw()
 
-latex.DrawLatex(0.55, 0.65, "Combined #tau_{had}#tau_{had}, #tau_{lep}#tau_{had} (SLT, LTT)")
+latex.DrawLatex(0.55, 0.65,
+                "Combined #tau_{had}#tau_{had}, "
+                "#tau_{lep}#tau_{had} (SLT, LTT)")
 latex.DrawLatex(0.55, 0.6, f"m_{{X}} = {args.mass} GeV")
 
 c.RedrawAxis()
@@ -120,12 +127,11 @@ del c
 # ECDF
 cdf = ECDF(df_good["q0"])
 
-# Save ECDF
-with open(args.outfile_ecdf, "wb") as fout:
-    pickle.dump(cdf, fout)
+# Store q0 values for global significance analysis
+df_good["q0"].to_csv(args.outfile_q0_csv, index=False)
 
 # Significance plot
-q0 =  np.linspace(0, 15, 200)
+q0 = np.linspace(0, 14, 200)
 sig = norm.ppf(cdf(q0))
 
 # Bootstrap uncertainty on sig
@@ -139,12 +145,14 @@ p = (100 - 68) / 2
 band = np.array(band)
 band = np.percentile(band, [p, 100 - p], axis=0)
 
-f = R.TF1("f", "sqrt(x)", 0, 15)
+f = R.TF1("f", "sqrt(x)", 0, 14)
 g = R.TGraph(len(q0), q0, sig)
 
 err_hi = band[1] - sig
 err_lo = sig - band[0]
-g_err = R.TGraphAsymmErrors(len(q0), q0, sig, R.nullptr, R.nullptr, err_lo, err_hi)
+g_err = R.TGraphAsymmErrors(len(q0), q0, sig,
+                            R.nullptr, R.nullptr,
+                            err_lo, err_hi)
 
 f.SetLineColor(R.kRed)
 f.SetLineWidth(2)
@@ -164,7 +172,7 @@ leg.AddEntry(g_err, "Uncertainty (68% CI)", "f")
 leg.AddEntry(f, "Asymptotic approx.", "l")
 
 
-h_dummy = R.TH1F("h_dummy", "", 5, 0, 15)
+h_dummy = R.TH1F("h_dummy", "", 5, 0, 14)
 h_dummy.SetMinimum(0)
 h_dummy.SetMaximum(4)
 h_dummy.GetXaxis().SetTitle("q_{0}")
@@ -180,7 +188,9 @@ f.Draw("L,SAME")
 
 leg.Draw()
 
-latex.DrawLatex(0.5, 0.35, "Combined #tau_{had}#tau_{had}, #tau_{lep}#tau_{had} (SLT, LTT)")
+latex.DrawLatex(0.5, 0.35,
+                "Combined #tau_{had}#tau_{had}, "
+                "#tau_{lep}#tau_{had} (SLT, LTT)")
 latex.DrawLatex(0.5, 0.3, f"m_{{X}} = {args.mass} GeV")
 
 c.RedrawAxis()

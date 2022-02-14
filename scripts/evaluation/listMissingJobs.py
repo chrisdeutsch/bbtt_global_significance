@@ -3,7 +3,6 @@ import argparse
 import os
 import re
 
-import numpy as np
 import pandas as pd
 
 
@@ -40,7 +39,7 @@ for fn in args.infiles:
     print(f"For file: {basename}")
     print(f"Number of finished jobs: {finished_jobs}")
     print(f"Number of missing jobs: {num_missing}")
-    print(f"")
+    print("")
 
 # Write out csv of jobs to rerun
 if args.outfile is not None:

@@ -43,7 +43,7 @@ def print_toy(df, index, mass):
                   "retry_method", "retry_priority"]
 
     print(df.loc[
-        (df["toyindex"] == index) & (df["mass"] == mass), print_cols]\
+        (df["toyindex"] == index) & (df["mass"] == mass), print_cols]
           .sort_values("retry_priority"))
 
 
@@ -93,7 +93,8 @@ sel_good = (~df["failed_fit"]) & (~df["neg_q0"])
 df_good = df.loc[sel_good].copy()
 
 # Count number of successful fits
-df_good["good_count"] = df_good.groupby(["toyindex", "mass"])["failed_fit"].transform("count")
+df_good["good_count"] = df_good.groupby(["toyindex", "mass"])["failed_fit"] \
+                               .transform("count")
 
 # Require at least three good alternative fits
 df_good = df_good.loc[df_good["good_count"] >= 3].copy()
@@ -121,7 +122,8 @@ with pd.option_context("display.max_rows", None,
                        "display.max_columns", None,
                        "display.width", 185,
                        "display.precision", 2):
-    print(df_sanity.loc[df_sanity["sig_delta"] > 0.2].sort_values("sig_delta", ascending=False))
+    print(df_sanity.loc[df_sanity["sig_delta"] > 0.2]
+          .sort_values("sig_delta", ascending=False))
 
 # === End of sanity check ===
 
@@ -154,10 +156,8 @@ df_bad["cond_good"] = df_bad["cond_status"] == 0
 df_bad["muhat_negative"] = df_bad["muhat"] < 0
 
 print("Count of status codes")
-print(df_bad.groupby(["uncond_good", "cond_good"])\
-      .agg(count=("q0", "count"), muhat_sign=("muhat_negative", "mean")))
+print(df_bad.groupby(["uncond_good", "cond_good"])
+            .agg(count=("q0", "count"), muhat_sign=("muhat_negative", "mean")))
 
-print(df_bad.groupby(["uncond_good", "cond_good", "muhat_negative"])["q0"].count())
-
-
-import pdb; pdb.set_trace()
+print(df_bad.groupby(["uncond_good", "cond_good", "muhat_negative"])["q0"]
+            .count())

@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 import argparse
+import re
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
 from scipy.optimize import root_scalar, minimize
+from statsmodels.distributions.empirical_distribution import ECDF
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
 parser.add_argument("--method", choices=["asymptotics", "toys"], default="asymptotics")
-parser.add_argument("--retried-toys", default=None)
+parser.add_argument("--q0-sampling-distributions", nargs="*")
 args = parser.parse_args()
 
 
@@ -18,12 +20,36 @@ R.gROOT.SetBatch(True)
 R.gROOT.SetStyle("ATLAS")
 
 
+# Load toy results
+if args.method == "toys":
+    assert args.q0_sampling_distributions is not None \
+        and len(args.q0_sampling_distributions) == 20
+
+    q0_toys = {}
+    q0_ecdf = {}
+    for fn in args.q0_sampling_distributions:
+        m = re.search(r"q0_(\d+)\.csv$", fn)
+        if not m:
+            raise RuntimeError(f"Cannot parse mass from: {fn}")
+
+        mass, = m.groups()
+        mass = int(mass)
+
+        q0_toys[mass] = pd.read_csv(fn)
+        q0_ecdf[mass] = ECDF(q0_toys[mass]["q0"])
+
+
 # Configuration
 obs_z0 = 3.012651697087006
 obs_pval = 1.0 - stats.norm.cdf(obs_z0)
 
+if args.method == "toys":
+    obs_q0 = obs_z0**2
+    obs_pval = 1 - q0_ecdf[1000](obs_q0)
+    obs_z0 = stats.norm.ppf(q0_ecdf[1000](obs_q0))
+
 # Read global significance toys
-df = pd.read_csv(args.infile)
+df = pd.read_csv(args.infile, low_memory=False)
 
 # Convert to proper dtypes
 df = df.astype({
@@ -35,7 +61,8 @@ df = df.astype({
 
 # Rename 'index' to 'toyindex' to avoid confusion with the index of
 # the dataframe
-df.rename(columns={"index": "toyindex"}, inplace=True)
+if "index" in df.columns:
+    df.rename(columns={"index": "toyindex"}, inplace=True)
 
 # Check that there are no duplicates
 assert not df.duplicated(["toyindex", "mass"]).any()
@@ -50,28 +77,6 @@ num_failed = df["failed_fit"].sum()
 frac_failed = num_failed / len(df)
 print(f"Failed fits: {num_failed} ({100 * frac_failed:.1f} %)")
 
-
-# Retried toys
-if args.retried_toys is not None:
-    print("Adding retried toys...")
-    df_retried = pd.read_csv(args.retried_toys)
-
-    # Check that there are no duplicates
-    assert not df_retried.duplicated(["toyindex", "mass"]).any()
-
-    df_merged = pd.concat([df, df_retried])
-    df_merged.sort_values("failed_fit", inplace=True)
-    df_merged.drop_duplicates(["toyindex", "mass"], keep="first", inplace=True)
-
-    # Ensure that all toys have 20 fits
-    assert np.all(df_merged.groupby("toyindex")["q0"].count() == 20)
-
-    df = df_merged
-
-    num_failed = df["failed_fit"].sum()
-    frac_failed = num_failed / len(df)
-    print(f"Failed fits after retrying: {num_failed} ({100 * frac_failed:.1f} %)")
-
 # Transform q0 to one-sided discovery test statistic
 df.loc[df["muhat"] <= 0, "q0"] = 0.0
 
@@ -83,17 +88,36 @@ print("Fraction of good toys: {:.1f} %".format(
 df_good = df.loc[df["good_toy"]].copy()
 
 # Set slightly negative q0 to 0 and check that none left
-threshold = -0.02
+threshold = -0.05
 df_good.loc[(df_good["q0"] < 0) & (df_good["q0"] > threshold), "q0"] = 0.0
-
 #TODO: Remove me
 df_good.loc[df_good["q0"] < 0, "q0"] = 0.0
 
 assert len(df_good.loc[df_good["q0"] < 0]) == 0
 
-# Calculat *local* significance
+# Calculate *local* significance
 df_good["sig_asymptotics"] = np.sqrt(df_good["q0"])
-df_good["sig_toys"] = 0.0 # TODO
+df_good["sig_toys"] = 0.0
+
+if args.method == "toys":
+    for mass in df_good["mass"].unique():
+        q0 = df_good.loc[df_good["mass"] == mass, "q0"]
+        sig = stats.norm.ppf(q0_ecdf[mass](q0))
+
+        # Getting infinities if q0 > q0 value seen for local toys
+        mask_inf = np.isinf(sig)
+        num_inf = np.count_nonzero(mask_inf)
+
+        if num_inf > 0:
+            print(f"Encountered infinities for mass: {mass}")
+            print("Setting significance to 4.99")
+            # This is fine as long as the default value > the observed
+            # threshold which is ~3
+            sig[mask_inf] = 4.99
+
+        assert not np.any(np.isinf(sig))
+        df_good.loc[df_good["mass"] == mass, "sig_toys"] = sig
+
 
 # Maximum local significance
 df_zmax = df_good.groupby("toyindex")["sig_asymptotics"].max().to_frame("max_sig_asymptotics")
@@ -132,7 +156,10 @@ def fit_trial_factor(sig_max):
     log_pdf = lambda x, n: np.log(n) + (n - 1) * stats.norm.logcdf(x) - x**2 / 2
     nll = lambda n: -log_pdf(sig_max, n).sum()
 
-    res = minimize(nll, x0=[15.], bounds=[[5., 30.]])
+    res = minimize(nll, x0=[15.], bounds=[[10., 21.]])
+    if not res.success:
+        print(res)
+
     assert res.success
 
     trial_factor, = res.x
