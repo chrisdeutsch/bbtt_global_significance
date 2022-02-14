@@ -52,9 +52,7 @@ print(f"Failed fits: {num_failed} ({100 * frac_failed:.1f} %)")
 df.loc[df["muhat"] <= 0, "q0"] = 0.0
 
 # Only keep good toys
-#df_good = df.loc[~df["failed_fit"]].copy()
-df_good = df.copy()
-df_good.loc[df["failed_fit"], "q0"] = 0.0
+df_good = df.loc[~df["failed_fit"]].copy()
 
 # Set negative q0 to 0
 df_good.loc[df_good["q0"] < 0, "q0"] = 0.0

@@ -1,5 +1,11 @@
+import warnings
+
 import numpy as np
 import pandas as pd
+from scipy.optimize import root_scalar, minimize
+from scipy import stats
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
@@ -66,3 +72,30 @@ class ToyPvalueCalculator(object):
             bootstrapped.add_q0_distribution(mass, q0_resampled)
 
         return bootstrapped
+
+
+def binom_mle_interval(k, n, bracket=(0.01, 0.1)):
+    llh = lambda p, k, n: k * np.log(p) + (n - k) * np.log(1 - p)
+    delta_llh = lambda p: llh(p, k, n) - llh(k / n, k, n)
+
+    root_lo = root_scalar(lambda p: -2 * delta_llh(p) - 1, bracket=[bracket[0], k / n])
+    root_hi = root_scalar(lambda p: -2 * delta_llh(p) - 1, bracket=[k / n, bracket[1]])
+    assert root_lo.converged and root_hi.converged
+
+    return root_lo.root, root_hi.root
+
+
+def fit_trial_factor(sig_max):
+    # Constants removed
+    log_pdf = lambda x, n: np.log(n) + (n - 1) * stats.norm.logcdf(x) - x**2 / 2
+    nll = lambda n: -log_pdf(sig_max, n).sum()
+
+    res = minimize(nll, x0=[15.], bounds=[[10., 21.]])
+    if not res.success:
+        print(res)
+
+    assert res.success
+
+    trial_factor, = res.x
+
+    return trial_factor
