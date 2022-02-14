@@ -15,7 +15,8 @@ import ROOT as R
 R.gROOT.SetBatch(True)
 R.gROOT.SetStyle("ATLAS")
 
-from common import load_toys, ToyPvalueCalculator, binom_mle_interval, fit_trial_factor
+from common import load_toys, binom_mle_interval, fit_trial_factor
+from common import ToyPvalueCalculator
 
 
 parser = argparse.ArgumentParser()
@@ -104,12 +105,17 @@ print(f"68% CL interval on sig-global: "
 
 
 # Trial factor
-trial_factor = fit_trial_factor(df_zmax[f"max_sig"])
+trial_factor = fit_trial_factor(df_zmax["max_sig"])
 tf_global_sig = stats.norm.ppf(1 - (1 - (1 - obs_pval)**trial_factor))
 print(f"Trial factor: {trial_factor:.1f}")
 print(f"Global significance (trial factor): {tf_global_sig:.2f}")
 
-tf_pdf = lambda x, n: n * stats.norm.cdf(x)**(n - 1) * np.exp(-x**2/2.) / np.sqrt(2 * np.pi)
+
+def tf_pdf(x, n):
+    return (n * stats.norm.cdf(x)**(n - 1) * np.exp(-x**2/2.)
+            / np.sqrt(2 * np.pi))
+
+
 x_tf = np.linspace(0, 5, 200)
 norm = (5 / 100.) * len(df_zmax)  # Bin width * number of toys
 y_tf = norm * tf_pdf(x_tf, trial_factor)
@@ -137,7 +143,7 @@ latex.SetTextSize(19)
 
 c = R.TCanvas("c", "", 800, 600)
 h_zmax.Draw("HIST,E0")
-#g_tf.Draw("C,SAME")
+# g_tf.Draw("C,SAME")
 
 latex.DrawLatex(0.54, 0.85, f"Number of toys: {len(df_zmax)}")
 latex.DrawLatex(0.54, 0.80, "Toys with Z_{0}^{max} > Z_{0}^{max,obs}: "

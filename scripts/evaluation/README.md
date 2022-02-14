@@ -24,11 +24,12 @@ outlined in the INT note.
 The script `mergeRetriedToys.py` merges default setting toys with the
 retried toys using alternative optimizer settings.
 
-The script `evaluateLocalSignificance.py`
+The main analysis is performed in:
 
-`evaluateGlobalSignificanceAsymptotics.py`
-
-`evaluateGlobalSignificanceToys.py`
+- `evaluateLocalSignificanceAsymptotics.py`: Estimate the global
+  significance using the asymptotic approximation for the local significances.
+- `evaluateGlobalSignificanceToys.py`: Estimate the global
+  significance using toy experiments for the local significances.
 
 
 
