@@ -45,8 +45,9 @@ df.loc[df["failed_fit"], "q0"] = 0.0
 
 num_failed = df["failed_fit"].sum()
 frac_failed = num_failed / len(df)
+frac_negative = (df.loc[df["failed_fit"], "muhat"] < 0).mean()
 print(f"Failed fits: {num_failed} ({100 * frac_failed:.1f} %)")
-
+print(f"Fraction of failed fits with negative muhat: {100 * frac_negative:.1f} %")
 
 # Transform q0 to one-sided discovery test statistic
 df.loc[df["muhat"] <= 0, "q0"] = 0.0
@@ -97,7 +98,7 @@ leg = R.TLegend(0.6, 0.72, 0.85, 0.85)
 leg.SetTextFont(43)
 leg.SetTextSize(19)
 leg.SetBorderSize(0)
-leg.AddEntry(h_q0, "Toys", "f")
+leg.AddEntry(h_q0, f"Toys (N_{{toys}} = {len(df_good)})", "f")
 leg.AddEntry(h_q0_sampling, "Asymptotic approx.", "f")
 
 latex = R.TLatex()
@@ -116,6 +117,7 @@ latex.DrawLatex(0.55, 0.65,
                 "Combined #tau_{had}#tau_{had}, "
                 "#tau_{lep}#tau_{had} (SLT, LTT)")
 latex.DrawLatex(0.55, 0.6, f"m_{{X}} = {args.mass} GeV")
+latex.DrawLatex(0.55, 0.52, f"Fit failure rate: {100 * frac_failed:.1f} %")
 
 c.RedrawAxis()
 c.SaveAs(args.outfile_q0_plot)
@@ -165,7 +167,7 @@ leg = R.TLegend(0.5, 0.4, 0.8, 0.55)
 leg.SetTextFont(43)
 leg.SetTextSize(19)
 leg.SetBorderSize(0)
-leg.AddEntry(g, "Toys", "l")
+leg.AddEntry(g, f"Toys (N_{{toys}} = {len(df_good)})", "l")
 leg.AddEntry(g_err, "Uncertainty (68% CI)", "f")
 leg.AddEntry(f, "Asymptotic approx.", "l")
 
