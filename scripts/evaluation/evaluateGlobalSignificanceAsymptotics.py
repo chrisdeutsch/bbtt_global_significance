@@ -9,6 +9,8 @@ from common import load_toys, binom_mle_interval, fit_trial_factor
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile")
+parser.add_argument("--replace-failures", action="store_true",
+                    help="Replace failing fits with q0 = 0")
 args = parser.parse_args()
 
 
@@ -32,6 +34,11 @@ print(f"Total number of toys: {total_toys}")
 print(f"Failed fits: {num_failed} ({100 * frac_failed:.1f} %)")
 print("Fraction of good toys: {:.1f} %".format(
     100 * df["good_toy"].sum() / len(df)))
+
+if args.replace_failures:
+    print("Replacing failed fits with q0 = 0...")
+    df.loc[df["failed_fit"], "q0"] = 0.0
+    df["good_toy"] = True
 
 df_good = df.loc[df["good_toy"]].copy()
 
@@ -142,4 +149,4 @@ latex.DrawLatex(obs_z0 + 0.05, 0.2 * h_zmax.GetMaximum(),
                 "Z_{{0}}^{{max,obs}}(asymptotics) = {:.2f}".format(obs_z0))
 
 c.RedrawAxis()
-c.SaveAs("zmax.pdf")
+c.SaveAs("zmax_asymptotics.pdf")

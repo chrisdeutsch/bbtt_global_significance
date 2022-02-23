@@ -22,6 +22,8 @@ from common import ToyPvalueCalculator
 parser = argparse.ArgumentParser()
 parser.add_argument("toys")
 parser.add_argument("--q0-sampling-distributions", nargs="+", required=True)
+parser.add_argument("--replace-failures", action="store_true",
+                    help="Replacing failing fits with q0 = 0")
 args = parser.parse_args()
 
 
@@ -30,6 +32,11 @@ df = load_toys(args.toys)
 
 total_toys = len(np.unique(df["toyindex"]))
 total_failed = df["failed_fit"].sum()
+
+if args.replace_failures:
+    print("Replacing failed fits with q0 = 0...")
+    df.loc[df["failed_fit"], "q0"] = 0.0
+    df["good_toy"] = True
 
 df_good = df.loc[df["good_toy"]].copy()
 total_good = len(np.unique(df_good["toyindex"]))
